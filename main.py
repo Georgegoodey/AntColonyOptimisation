@@ -2,6 +2,7 @@ import random
 import numpy as np
 from tkinter import *
 import time
+import math
 
 class AntTraverse:
 
@@ -69,36 +70,36 @@ class Ant:
         self.alpha = alpha
         self.beta = beta
     
-    def probabilityIJ(self,i,j,tau,eta) -> float:
-        if(eta[i][j] == 0):
+    def probabilityIJ(self,i,j,τ,η) -> float:
+        if(η[i][j] == 0):
             return 0
-        pheromoneProx = tau[i][j]**self.alpha * eta[i][j]**-self.beta
+        pheromoneProx = τ[i][j]**self.alpha * η[i][j]**-self.beta
         sumAllowed = 0
-        for m in range(len(eta[i])):
-            if(eta[i][m] == 0):
+        for m in range(len(η[i])):
+            if(η[i][m] == 0):
                 continue
-            sumAllowed += tau[i][m]**self.alpha * eta[i][m]**-self.beta
+            sumAllowed += τ[i][m]**self.alpha * η[i][m]**-self.beta
         probIJ = pheromoneProx/sumAllowed
         return probIJ
 
-    def nextNode(self,tau,eta) -> int:
+    def nextNode(self,τ,η) -> int:
         i = self.node
         probs = []
         for n in self.remaining:
-            prob = self.probabilityIJ(i,n,tau,eta)
+            prob = self.probabilityIJ(i,n,τ,η)
             probs.append(prob)
         return random.choices(self.remaining,weights=probs,k=1)[0]
     
-    def move(self,tau,eta) -> None:
+    def move(self,τ,η) -> None:
         originalNode = self.node
         while(self.remaining):
-            newNode = self.nextNode(tau,eta)
+            newNode = self.nextNode(τ,η)
             self.remaining.remove(newNode)
             self.route.append(newNode)
-            self.cost += eta[self.node][newNode]
+            self.cost += η[self.node][newNode]
             self.node = newNode
         self.route.append(originalNode)
-        self.cost += eta[self.node][originalNode]
+        self.cost += η[self.node][originalNode]
         self.node = originalNode
 
     def printAnt(self) -> None:
@@ -153,20 +154,30 @@ def mainTraversal() -> None:
     print("Best Route: "+str(bestRoute))
     print("Cost of: "+str(bestCost))
 
-def main():
-    adjMat = [ # For travelling salesman
-        # 0   1   2   3   4   5   6
-        [0,  1,  4,  1,  2,  4,  5],  # Vertex 0
-        [1,  0,  2,  2,  1,  3,  4],  # Vertex 1
-        [4,  2,  0,  3,  1,  2,  1],  # Vertex 2
-        [1,  2,  3,  0,  1,  2,  4],  # Vertex 3
-        [2,  1,  1,  1,  0,  1,  2],  # Vertex 4
-        [4,  3,  2,  2,  1,  0,  1],  # Vertex 5
-        [5,  4,  1,  4,  2,  1,  0]   # Vertex 6
+def main() -> None:
+    # adjMat = [ # For travelling salesman
+    #     # 0   1   2   3   4   5   6
+    #     [0,  1,  4,  1,  2,  4,  5],  # Vertex 0
+    #     [1,  0,  2,  2,  1,  3,  4],  # Vertex 1
+    #     [4,  2,  0,  3,  1,  2,  1],  # Vertex 2
+    #     [1,  2,  3,  0,  1,  2,  4],  # Vertex 3
+    #     [2,  1,  1,  1,  0,  1,  2],  # Vertex 4
+    #     [4,  3,  2,  2,  1,  0,  1],  # Vertex 5
+    #     [5,  4,  1,  4,  2,  1,  0]   # Vertex 6
+    # ]
+    graph = [
+        [0,1],
+        [1,2],
+        [3,2],
+        [1,0],
+        [2,1],
+        [3,0],
+        [4,1]
     ]
+    print(adjMat := formAdjMat(graph))
     tau  = np.ones(np.shape(adjMat))
-    alpha = 1
-    beta = 2
+    α = 1
+    β = 2
     evaporationCoeff = 0.1
     q = 1
     antCount = int(input("How many ants do you want to simulate: "))
@@ -178,7 +189,7 @@ def main():
         ants = []
         tauChange = np.zeros(np.shape(adjMat))
         for a in range(antCount):
-            ants.append(Ant(nodes=list(range(len(adjMat))),alpha=alpha,beta=beta))
+            ants.append(Ant(nodes=list(range(len(adjMat))),alpha=α,beta=β))
         for n, ant in enumerate(ants):
             ant.move(tau,adjMat)
             if(ant.cost < bestCost):
@@ -192,6 +203,18 @@ def main():
         tau += tauChange / antCount
     # print("Best Route: "+str(bestRoute))
     # print("Cost of: "+str(bestCost))
+
+def formAdjMat(vertexCoords):
+    adjMat = [[0] * len(vertexCoords) for i in range(len(vertexCoords))]
+    for n,i in enumerate(vertexCoords):
+        for m,j in enumerate(vertexCoords):
+            if(n==m):
+                continue
+            xDist = abs(i[0]-j[0])
+            yDist = abs(i[1]-j[1])
+            dist = math.sqrt((xDist**2) + (yDist**2))
+            adjMat[n][m] = dist
+    return adjMat
 
 def progressBar(data,string):
     '''
