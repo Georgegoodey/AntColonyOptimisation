@@ -61,7 +61,7 @@ class Ant:
     alpha: float
     beta: float
 
-    def __init__(self, nodes, alpha, beta) -> None:
+    def __init__(self, nodes:list[int], alpha:float, beta:float) -> None:
         self.remaining = nodes
         self.node = random.choice(nodes)
         self.remaining.remove(self.node)
@@ -174,7 +174,20 @@ def main() -> None:
         [3,0],
         [4,1]
     ]
-    print(adjMat := formAdjMat(graph))
+    ukCities = [
+        [51.5072,-0.1275], # London
+        [52.4800,-1.9025], # Birmingham
+        [53.4794,-2.2453], # Manchester
+        [53.4075,-2.9919], # Liverpool
+        [52.9533,-1.1500], # Nottingham
+        [51.4536,-2.5975], # Bristol
+        [52.6344,-1.1319], # Leicester
+        [54.5964,-5.9300], # Belfast
+        [53.7492,-1.6023], # Leeds
+        [53.4429,-1.4698], # Sheffield
+        [55.8280,-4.2140] # Glasgow
+    ]
+    print(adjMat := formAdjMat(ukCities, haversineDistance))
     tau  = np.ones(np.shape(adjMat))
     α = 1
     β = 2
@@ -197,26 +210,42 @@ def main() -> None:
                 bestRoute = ant.route
             for r in range(len(ant.route)-1):
                 tauChange[ant.route[r]][ant.route[r+1]] += q / ant.cost
-            progressBar((i/iterations)+((n/(len(ants))/iterations)),("Best Route: "+str(bestRoute)+"\n"+"Cost of: "+str(bestCost)+"\n"))
-            time.sleep(0.01)
+            # progressBar((i/iterations)+((n/(len(ants))/iterations)),("Best Route: "+str(bestRoute)+"\n"+"Cost of: "+str(bestCost)+"\n"))
+            # time.sleep(0.01)
         tau *= (1-evaporationCoeff)
         tau += tauChange / antCount
-    # print("Best Route: "+str(bestRoute))
-    # print("Cost of: "+str(bestCost))
+    print("Best Route: "+str(bestRoute))
+    print("Cost of: "+str(bestCost))
 
-def formAdjMat(vertexCoords):
+def formAdjMat(vertexCoords, distance):
     adjMat = [[0] * len(vertexCoords) for i in range(len(vertexCoords))]
     for n,i in enumerate(vertexCoords):
         for m,j in enumerate(vertexCoords):
             if(n==m):
                 continue
-            xDist = abs(i[0]-j[0])
-            yDist = abs(i[1]-j[1])
-            dist = math.sqrt((xDist**2) + (yDist**2))
-            adjMat[n][m] = dist
+            adjMat[n][m] = distance(i,j)
     return adjMat
 
-def progressBar(data,string):
+def haversineDistance(o,b):
+    # Use haversine forumla for finding distances between longitude and latitude coords
+    R = 6371e3
+    phiA = o[0] * math.pi / 180
+    phiB = b[0] * math.pi / 180
+    deltaPhi = (b[0]-o[0]) * math.pi / 180
+    deltaLambda = (b[1]-o[1]) * math.pi / 180
+
+    a = (math.sin(deltaPhi/2) * math.sin(deltaPhi/2)) + (math.cos(phiA) * math.cos(phiB) * math.sin(deltaLambda/2) * math.sin(deltaLambda/2))
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    distance = R * c
+    return distance
+
+def pythagoreanDistance(a,b):
+    xDist = abs(a[0]-b[0])
+    yDist = abs(a[1]-b[1])
+    distance = math.sqrt((xDist**2) + (yDist**2))
+    return distance
+
+def progressBar(data,string) -> None:
     '''
         data: float between 0-1
     '''
