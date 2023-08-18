@@ -84,7 +84,7 @@ def main() -> None:
         [53.4429,-1.4698], # Sheffield
         [55.8280,-4.2140] # Glasgow
     ]
-    coords = loadCSV("gb.csv",1,2,True,5)
+    coords = loadCSV("gb.csv",1,2,True,1000)
     adjMat = formAdjMat(coords, haversineDistance)
     tau  = np.ones(np.shape(adjMat))
     α = 1

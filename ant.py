@@ -70,19 +70,25 @@ class Ant:
         if(η[i][j] == 0):
             return 0
         pheromoneProx = τ[i][j]**self.alpha * η[i][j]**-self.beta
+        # sumAllowed = 0
+        # for m in range(len(η[i])):
+        #     if(η[i][m] == 0):
+        #         continue
+        #     sumAllowed += τ[i][m]**self.alpha * η[i][m]**-self.beta
+        # probIJ = pheromoneProx/sumAllowed
+        return pheromoneProx#probIJ
+
+    def nextNode(self,τ,η) -> int:
+        i = self.node
+        probs = []
+        # Calculate denominator outside of ij probability as it stays the same regardless of j
         sumAllowed = 0
         for m in range(len(η[i])):
             if(η[i][m] == 0):
                 continue
             sumAllowed += τ[i][m]**self.alpha * η[i][m]**-self.beta
-        probIJ = pheromoneProx/sumAllowed
-        return probIJ
-
-    def nextNode(self,τ,η) -> int:
-        i = self.node
-        probs = []
         for n in self.remaining:
-            prob = self.probabilityIJ(i,n,τ,η)
+            prob = self.probabilityIJ(i,n,τ,η) / sumAllowed
             probs.append(prob)
         return random.choices(self.remaining,weights=probs,k=1)[0]
     
