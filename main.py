@@ -3,6 +3,7 @@ import numpy as np
 from tkinter import *
 import time
 import math
+import csv
 
 class AntTraverse:
 
@@ -187,7 +188,8 @@ def main() -> None:
         [53.4429,-1.4698], # Sheffield
         [55.8280,-4.2140] # Glasgow
     ]
-    print(adjMat := formAdjMat(ukCities, haversineDistance))
+    coords = loadCSV("gb.csv",1,2,True,100)
+    adjMat = formAdjMat(coords, haversineDistance)
     tau  = np.ones(np.shape(adjMat))
     α = 1
     β = 2
@@ -229,6 +231,7 @@ def formAdjMat(vertexCoords, distance):
 def haversineDistance(o,b):
     # Use haversine forumla for finding distances between longitude and latitude coords
     R = 6371e3
+    # print(o[0])
     phiA = o[0] * math.pi / 180
     phiB = b[0] * math.pi / 180
     deltaPhi = (b[0]-o[0]) * math.pi / 180
@@ -244,6 +247,18 @@ def pythagoreanDistance(a,b):
     yDist = abs(a[1]-b[1])
     distance = math.sqrt((xDist**2) + (yDist**2))
     return distance
+
+def loadCSV(filename:str,latIndex:int,longIndex:int,header:bool,limit:int) -> list[list[float]]:
+    coords = []
+    csvFile = open(filename)
+    csvReader = csv.reader(csvFile)
+    
+    for row in csvReader:
+        if(csvReader.line_num>limit):
+            break
+        if((not header) or (csvReader.line_num != 1)):
+            coords.append([float(row[latIndex]),float(row[longIndex])])
+    return coords
 
 def progressBar(data,string) -> None:
     '''
