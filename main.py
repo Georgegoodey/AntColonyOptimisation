@@ -1,113 +1,9 @@
-import random
 import numpy as np
-from tkinter import *
 import time
 import math
 import csv
 
-class AntTraverse:
-
-    node: int
-    end: int
-    cost: int
-    route: list
-
-    def __init__(self, startNode, endNode, adjMat) -> None:
-        self.node = startNode
-        self.end = endNode
-        self.cost = 0
-        self.route = [startNode]
-        self.mat = adjMat
-    
-    def probabilityIJ(self,i,j,tau,eta,alpha,beta) -> float:
-        if(eta[i][j] == 0):
-            return 0
-        pheromoneProx = tau[i][j]**alpha * eta[i][j]**-beta
-        sumAllowed = 0
-        for m in range(len(eta[i])):
-            if(eta[i][m] == 0):
-                continue
-            sumAllowed += tau[i][m]**alpha * eta[i][m]**-beta
-        probIJ = pheromoneProx/sumAllowed
-        return probIJ
-
-    def nextNode(self,tau,alpha,beta) -> int:
-        i = self.node
-        probs = []
-        nodes = self.mat[i]
-        for n in range(len(nodes)):
-            prob = self.probabilityIJ(i,n,tau,self.mat,alpha,beta)
-            probs.append(prob)
-        return random.choices(range(len(probs)),weights=probs,k=1)[0]
-    
-    def move(self,tau,alpha,beta) -> None:
-        while(self.node != self.end):
-            newNode = self.nextNode(tau,alpha,beta)
-            self.route.append(newNode)
-            self.cost += self.mat[self.node][newNode]
-            self.node = newNode
-
-    def printAnt(self) -> None:
-        print("Current Node: "+str(self.node))
-        print("Goal Node: "+str(self.end))
-        print("Current Cost: "+str(self.cost))
-        print("Route so Far: "+str(self.route))
-
-class Ant:
-
-    node: int
-    remaining: list
-    cost: int
-    route: list
-    alpha: float
-    beta: float
-
-    def __init__(self, nodes:list[int], alpha:float, beta:float) -> None:
-        self.remaining = nodes
-        self.node = random.choice(nodes)
-        self.remaining.remove(self.node)
-        self.cost = 0
-        self.route = [self.node]
-        self.alpha = alpha
-        self.beta = beta
-    
-    def probabilityIJ(self,i,j,τ,η) -> float:
-        if(η[i][j] == 0):
-            return 0
-        pheromoneProx = τ[i][j]**self.alpha * η[i][j]**-self.beta
-        sumAllowed = 0
-        for m in range(len(η[i])):
-            if(η[i][m] == 0):
-                continue
-            sumAllowed += τ[i][m]**self.alpha * η[i][m]**-self.beta
-        probIJ = pheromoneProx/sumAllowed
-        return probIJ
-
-    def nextNode(self,τ,η) -> int:
-        i = self.node
-        probs = []
-        for n in self.remaining:
-            prob = self.probabilityIJ(i,n,τ,η)
-            probs.append(prob)
-        return random.choices(self.remaining,weights=probs,k=1)[0]
-    
-    def move(self,τ,η) -> None:
-        originalNode = self.node
-        while(self.remaining):
-            newNode = self.nextNode(τ,η)
-            self.remaining.remove(newNode)
-            self.route.append(newNode)
-            self.cost += η[self.node][newNode]
-            self.node = newNode
-        self.route.append(originalNode)
-        self.cost += η[self.node][originalNode]
-        self.node = originalNode
-
-    def printAnt(self) -> None:
-        print("Current Node: "+str(self.node))
-        print("Goal Node: "+str(self.end))
-        print("Current Cost: "+str(self.cost))
-        print("Route so Far: "+str(self.route))
+from ant import Ant,AntTraverse
 
 def mainTraversal() -> None:
     # adjMat  =  [[0,1,2,0],[1,0,0,1],[2,0,0,2],[0,1,2,0]]
@@ -188,7 +84,7 @@ def main() -> None:
         [53.4429,-1.4698], # Sheffield
         [55.8280,-4.2140] # Glasgow
     ]
-    coords = loadCSV("gb.csv",1,2,True,100)
+    coords = loadCSV("gb.csv",1,2,True,5)
     adjMat = formAdjMat(coords, haversineDistance)
     tau  = np.ones(np.shape(adjMat))
     α = 1
@@ -205,7 +101,7 @@ def main() -> None:
         tauChange = np.zeros(np.shape(adjMat))
         for a in range(antCount):
             ants.append(Ant(nodes=list(range(len(adjMat))),alpha=α,beta=β))
-        for n, ant in enumerate(ants):
+        for a, ant in enumerate(ants):
             ant.move(tau,adjMat)
             if(ant.cost < bestCost):
                 bestCost = ant.cost
