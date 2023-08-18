@@ -79,7 +79,7 @@ def main() -> None:
                 bestRoute = ant.route
             for r in range(len(ant.route)-1):
                 tauChange[ant.route[r]][ant.route[r+1]] += q / ant.cost
-            # progressBar((i/iterations)+((n/(len(ants))/iterations)),("Best Route: "+str(bestRoute)+"\n"+"Cost of: "+str(bestCost)+"\n"))
+            progressBar((i/iterations)+((a/(len(ants))/iterations)))#,("Best Route: "+str(bestRoute)+"\n"+"Cost of: "+str(bestCost)+"\n"))
             # time.sleep(0.01)
         tau *= (1-evaporationCoeff)
         tau += tauChange / antCount
@@ -100,17 +100,19 @@ def formDistMat(vertexCoords:list[list[float]],distance) -> Mat:
             distMat.set(n,m,distance(i,j))
     return distMat
 
-def haversineDistance(o:float,b:float) -> float:
+def haversineDistance(i:float,j:float) -> float:
     '''
         Use haversine forumla for finding distances between longitude and latitude coords
+        i: first position
+        j: second position
     '''
     R = 6371e3
-    phiA = o[0] * math.pi / 180
-    phiB = b[0] * math.pi / 180
-    deltaPhi = (b[0]-o[0]) * math.pi / 180
-    deltaLambda = (b[1]-o[1]) * math.pi / 180
+    phiI = i[0] * math.pi / 180
+    phiJ = j[0] * math.pi / 180
+    deltaPhi = (j[0]-i[0]) * math.pi / 180
+    deltaLambda = (j[1]-i[1]) * math.pi / 180
 
-    a = (math.sin(deltaPhi/2) * math.sin(deltaPhi/2)) + (math.cos(phiA) * math.cos(phiB) * math.sin(deltaLambda/2) * math.sin(deltaLambda/2))
+    a = (math.sin(deltaPhi/2) * math.sin(deltaPhi/2)) + (math.cos(phiI) * math.cos(phiJ) * math.sin(deltaLambda/2) * math.sin(deltaLambda/2))
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     distance = R * c
     return distance
@@ -127,7 +129,7 @@ def pythagoreanDistance(a:float,b:float) -> float:
 
 def loadCSV(filename:str,index1:int,index2:int,header:bool,limit:int) -> list[list[float]]:
     '''
-        forms a list of vertex coordinates from the csv contents of a file
+        Forms a list of vertex coordinates from the csv contents of a file
         filename: a string representing the name of the data
         index1: a int representing the csv index of the first datum, can represent latitude, x etc.
         index2: a int representing the csv index of the second datum, can represent longitude, y etc.
@@ -153,9 +155,10 @@ def loadCSV(filename:str,index1:int,index2:int,header:bool,limit:int) -> list[li
     
     return coords
 
-def progressBar(data,string) -> None:
+def progressBar(data:float,string:str="") -> None:
     '''
         data: float between 0-1
+        string: a string to be displayed after the progress bar
     '''
     # Gets position of index in list over list length as a floored percentage
     percent = int(np.floor(data*100))
