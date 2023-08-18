@@ -1,18 +1,21 @@
 import random
 
+from distance_matrix import Mat
+
 class AntTraverse:
 
     node: int
     end: int
     cost: int
     route: list
+    mat: Mat
 
-    def __init__(self, startNode, endNode, adjMat) -> None:
+    def __init__(self, startNode, endNode, distMat:Mat) -> None:
         self.node = startNode
         self.end = endNode
         self.cost = 0
         self.route = [startNode]
-        self.mat = adjMat
+        self.mat = distMat
     
     def probabilityIJ(self,i,j,tau,eta,alpha,beta) -> float:
         if(eta[i][j] == 0):
@@ -29,9 +32,9 @@ class AntTraverse:
     def nextNode(self,tau,alpha,beta) -> int:
         i = self.node
         probs = []
-        nodes = self.mat[i]
+        nodes = self.mat.row(i)
         for n in range(len(nodes)):
-            prob = self.probabilityIJ(i,n,tau,self.mat,alpha,beta)
+            prob = self.probabilityIJ(i,n,tau,self.mat.content,alpha,beta)
             probs.append(prob)
         return random.choices(range(len(probs)),weights=probs,k=1)[0]
     
@@ -39,7 +42,7 @@ class AntTraverse:
         while(self.node != self.end):
             newNode = self.nextNode(tau,alpha,beta)
             self.route.append(newNode)
-            self.cost += self.mat[self.node][newNode]
+            self.cost += self.mat.content[self.node][newNode]
             self.node = newNode
 
     def printAnt(self) -> None:
