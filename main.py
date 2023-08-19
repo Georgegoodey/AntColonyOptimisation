@@ -73,14 +73,13 @@ def main() -> None:
         for a in range(antCount):
             ants.append(Ant(nodes=list(range(distMat.size)),alpha=α,beta=β))
         for a, ant in enumerate(ants):
-            ant.move(tau,distMat.content)
+            ant.move(tau,distMat)
             if(ant.cost < bestCost):
                 bestCost = ant.cost
                 bestRoute = ant.route
             for r in range(len(ant.route)-1):
                 tauChange[ant.route[r]][ant.route[r+1]] += q / ant.cost
-            progressBar((i/iterations)+((a/(len(ants))/iterations)))#,("Best Route: "+str(bestRoute)+"\n"+"Cost of: "+str(bestCost)+"\n"))
-            # time.sleep(0.01)
+            progressBar((i/iterations)+((a/(len(ants))/iterations)))
         tau *= (1-evaporationCoeff)
         tau += tauChange / antCount
     print("Best Route: "+str(bestRoute))
@@ -163,9 +162,9 @@ def progressBar(data:float,string:str="") -> None:
     # Gets position of index in list over list length as a floored percentage
     percent = int(np.floor(data*100))
     # Calculates half the percentage, this provides only 50 characters and a less excessive progress bar
-    percentOver2 = int(percent/2)
+    percentOver4 = int(percent/4)
     # Prints out the progress bar, ending in an escape character "\r" so that it keeps printing on the same line everytime
-    print(string+"Training Progress: "+str(percent)+"% "+("#"*(percentOver2))+("."*(50-percentOver2)), end="\r")
+    print(string+"Training Progress: "+str(percent)+"% "+("█"*(percentOver4))+("▒"*(25-percentOver4)), end="\r")
 
 if __name__ == "__main__":
     main()

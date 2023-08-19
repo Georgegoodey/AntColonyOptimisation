@@ -69,46 +69,35 @@ class Ant:
         self.alpha = alpha
         self.beta = beta
     
-    def probabilityIJ(self,i,j,τ,η) -> float:
-        if(η[i][j] == 0):
+    def probabilityIJ(self,i,j,τ,η:Mat) -> float:
+        if(η.get(i,j) == 0):
             return 0
-        pheromoneProx = τ[i][j]**self.alpha * η[i][j]**-self.beta
-        # sumAllowed = 0
-        # for m in range(len(η[i])):
-        #     if(η[i][m] == 0):
-        #         continue
-        #     sumAllowed += τ[i][m]**self.alpha * η[i][m]**-self.beta
-        # probIJ = pheromoneProx/sumAllowed
-        return pheromoneProx#probIJ
+        pheromoneProx = τ[i][j]**self.alpha * η.get(i,j)**-self.beta
+        # sumAllowed should be calculated here if following equation
+        return pheromoneProx
 
-    def nextNode(self,τ,η) -> int:
+    def nextNode(self,τ,η:Mat) -> int:
         i = self.node
         probs = []
         # Calculate denominator outside of ij probability as it stays the same regardless of j
         sumAllowed = 0
-        for m in range(len(η[i])):
-            if(η[i][m] == 0):
+        for m in range(η.size):
+            if(η.get(i,m) == 0):
                 continue
-            sumAllowed += τ[i][m]**self.alpha * η[i][m]**-self.beta
+            sumAllowed += τ[i][m]**self.alpha * η.get(i,m)**-self.beta
         for n in self.remaining:
             prob = self.probabilityIJ(i,n,τ,η) / sumAllowed
             probs.append(prob)
         return random.choices(self.remaining,weights=probs,k=1)[0]
     
-    def move(self,τ,η) -> None:
+    def move(self,τ:list[list[float]],η:Mat) -> None:
         originalNode = self.node
         while(self.remaining):
             newNode = self.nextNode(τ,η)
             self.remaining.remove(newNode)
             self.route.append(newNode)
-            self.cost += η[self.node][newNode]
+            self.cost += η.get(self.node,newNode)
             self.node = newNode
         self.route.append(originalNode)
-        self.cost += η[self.node][originalNode]
+        self.cost += η.get(self.node,originalNode)
         self.node = originalNode
-
-    def printAnt(self) -> None:
-        print("Current Node: "+str(self.node))
-        print("Goal Node: "+str(self.end))
-        print("Current Cost: "+str(self.cost))
-        print("Route so Far: "+str(self.route))
