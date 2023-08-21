@@ -67,6 +67,7 @@ def main() -> None:
     bestCost = float("inf")
     bestRoute = []
     ants = []
+    startTime = time.time()
     for i in range(iterations):
         ants = []
         tauChange = np.zeros(distMat.shape)
@@ -82,8 +83,12 @@ def main() -> None:
             progressBar((i/iterations)+((a/(len(ants))/iterations)))
         tau *= (1-evaporationCoeff)
         tau += tauChange / antCount
+    endTime = time.time()
+    totalTime = endTime - startTime
     print("Best Route: "+str(bestRoute))
     print("Cost of: "+str(bestCost))
+    print("Time taken: "+str(totalTime))
+    print("Time per ant: "+str(totalTime/(iterations*antCount)))
 
 def formDistMat(vertexCoords:list[list[float]],distance) -> Mat:
     '''
