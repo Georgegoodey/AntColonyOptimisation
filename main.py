@@ -53,14 +53,15 @@ def mainTraversal() -> None:
     print("Cost of: "+str(bestCost))
 
 def main() -> None:
-    limit = int(input("Enter row limit for data: "))
-    coords = loadCSV("gb.csv",1,2,True,limit=limit)
-    distMat = formDistMat(coords, haversineDistance)
-    tau  = np.ones(distMat.shape)
+    # Hyperparameters and coeffs
     α = 1
     β = 2
     evaporationCoeff = 0.1
     q = 1
+    limit = int(input("Enter row limit for data: "))
+    coords = loadCSV("gb.csv",1,2,True,limit=limit)
+    distMat = formDistMat(coords, haversineDistance, β)
+    tau  = np.ones(distMat.shape)
     antCount = int(input("How many ants do you want to simulate: "))
     iterations = int(input("How many iterations do you want to simulate: "))
     # Python version of infinitely high cost
@@ -90,18 +91,19 @@ def main() -> None:
     print("Time taken: "+str(totalTime))
     print("Time per ant: "+str(totalTime/(iterations*antCount)))
 
-def formDistMat(vertexCoords:list[list[float]],distance) -> Mat:
+def formDistMat(vertexCoords:list[list[float]],distance,beta:float) -> Mat:
     '''
         Forms a distance matrix between all the given vertex coordinates
         vertexCoords: a list of coordinates for each data point vertex
         distance: the distance function to be used in the distance matrix calculations
     '''
-    distMat = Mat(size=len(vertexCoords))
+    distMat = Mat(size=len(vertexCoords),beta=beta)
     for n,i in enumerate(vertexCoords):
         for m,j in enumerate(vertexCoords):
             if(n==m):
                 continue
             distMat.set(n,m,distance(i,j))
+    distMat.init_prox()
     return distMat
 
 def haversineDistance(i:float,j:float) -> float:

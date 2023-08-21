@@ -72,7 +72,7 @@ class Ant:
     def probabilityIJ(self,i,j,τ,η:Mat) -> float:
         if(η.get(i,j) == 0):
             return 0
-        pheromoneProx = τ[i][j]**self.alpha * η.get(i,j)**-self.beta
+        pheromoneProx = τ[i][j]**self.alpha * η.getProx(i,j)
         # sumAllowed should be calculated here if following equation
         return pheromoneProx
 
@@ -84,7 +84,7 @@ class Ant:
         for m in range(η.size):
             if(η.get(i,m) == 0):
                 continue
-            sumAllowed += τ[i][m]**self.alpha * η.get(i,m)**-self.beta
+            sumAllowed += τ[i][m]**self.alpha * η.getProx(i,m)
         for n in self.remaining:
             prob = self.probabilityIJ(i,n,τ,η) / sumAllowed
             probs.append(prob)
