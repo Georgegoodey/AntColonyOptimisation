@@ -79,15 +79,18 @@ class Ant:
     def nextNode(self,τ,η:Mat) -> int:
         i = self.node
         probs = []
-        # Calculate denominator outside of ij probability as it stays the same regardless of j
+        # Calculate denominator while calculating ij probability as it stays the same regardless of j and only needs to be calced once
         sumAllowed = 0
-        for m in range(η.size):
-            if(η.get(i,m) == 0):
-                continue
-            sumAllowed += τ[i][m]**self.alpha * η.getProx(i,m)
+        # for m in range(η.size):
+        #     if(η.get(i,m) == 0):
+        #         continue
+        #     sumAllowed += τ[i][m]**self.alpha * η.getProx(i,m)
         for n in self.remaining:
-            prob = self.probabilityIJ(i,n,τ,η) / sumAllowed
+            prob = self.probabilityIJ(i,n,τ,η)
+            sumAllowed += prob
             probs.append(prob)
+        for n,i in enumerate(probs):
+            probs[n] = i / sumAllowed 
         return random.choices(self.remaining,weights=probs,k=1)[0]
     
     def move(self,τ:list[list[float]],η:Mat) -> None:
