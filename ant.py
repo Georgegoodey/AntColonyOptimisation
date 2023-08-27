@@ -54,9 +54,9 @@ class AntTraverse:
 class Ant:
 
     node: int
-    remaining: list
+    remaining: list[int]
     cost: int
-    route: list
+    route: list[int]
     alpha: float
     beta: float
 
@@ -69,7 +69,7 @@ class Ant:
         self.alpha = alpha
         self.beta = beta
     
-    def probabilityIJ(self,i,j,τ,η:Mat) -> float:
+    def probabilityIJ(self,i:int,j:int,τ:list[list[float]],η:Mat) -> float:
         if(η.get(i,j) == 0):
             return 0
         pheromoneProx = τ[i][j]**self.alpha * η.getProx(i,j)
