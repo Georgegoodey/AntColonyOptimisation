@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ant.h"
+#include "distancematrix.h"
 
 #include <QApplication>
 #include <QGraphicsView>
@@ -28,44 +29,70 @@ static void runACO()
     antCount = t2->text().toInt();
 
     // ACO code
-    std::vector<std::vector<double>> distMat = {
-        {0,  1,  4,  1,  2,  4,  5},
-        {1,  0,  2,  2,  1,  3,  4},
-        {4,  2,  0,  3,  1,  2,  1},
-        {1,  2,  3,  0,  1,  2,  4},
-        {2,  1,  1,  1,  0,  1,  2},
-        {4,  3,  2,  2,  1,  0,  1},
-        {5,  4,  1,  4,  2,  1,  0}
-    };
+//    std::vector<std::vector<double>> distMat = {
+//        {0,  1,  4,  1,  2,  4,  5},
+//        {1,  0,  2,  2,  1,  3,  4},
+//        {4,  2,  0,  3,  1,  2,  1},
+//        {1,  2,  3,  0,  1,  2,  4},
+//        {2,  1,  1,  1,  0,  1,  2},
+//        {4,  3,  2,  2,  1,  0,  1},
+//        {5,  4,  1,  4,  2,  1,  0}
+//    };
+
+    double size = 10;
+
+    distanceMatrix *distMat = new distanceMatrix(size);
+    distMat->loadFile("gb.csv",0);
 
     double alpha = 1;
     double beta = 2;
     double evapCoef = 0.1;
     double q = 1;
 
-    std::vector<std::vector<double>> tau = {
-        {1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1}
-    };
+    std::vector<std::vector<double>> tau;
+
+    for (int i = 0; i < size; ++i) {
+        std::vector<double> tauRow;
+        for (int j = 0; j < size; ++j) {
+            tauRow.push_back(1);
+        }
+        tau.push_back(tauRow);
+    }
+
+//    std::vector<std::vector<double>> tau = {
+//        {1, 1, 1, 1, 1, 1, 1},
+//        {1, 1, 1, 1, 1, 1, 1},
+//        {1, 1, 1, 1, 1, 1, 1},
+//        {1, 1, 1, 1, 1, 1, 1},
+//        {1, 1, 1, 1, 1, 1, 1},
+//        {1, 1, 1, 1, 1, 1, 1},
+//        {1, 1, 1, 1, 1, 1, 1}
+//    };
 
     double bestCost = std::numeric_limits<double>::max();
     std::vector<int> bestRoute;
 
     for (int i = 0; i < iterations; i++) {
-        std::vector<std::vector<double>> tauChange = {
-            {0, 0, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0}
-        };
+//        std::vector<std::vector<double>> tauChange = {
+//            {0, 0, 0, 0, 0, 0, 0},
+//            {0, 0, 0, 0, 0, 0, 0},
+//            {0, 0, 0, 0, 0, 0, 0},
+//            {0, 0, 0, 0, 0, 0, 0},
+//            {0, 0, 0, 0, 0, 0, 0},
+//            {0, 0, 0, 0, 0, 0, 0},
+//            {0, 0, 0, 0, 0, 0, 0}
+//        };
+
+        std::vector<std::vector<double>> tauChange;
+
+        for (int i = 0; i < size; ++i) {
+            std::vector<double> tauRow;
+            for (int j = 0; j < size; ++j) {
+                tauRow.push_back(1);
+            }
+            tauChange.push_back(tauRow);
+        }
+
         for (int a = 0; a < antCount; a++) {
             std::vector<int> nodes = {0,1,2,3,4,5,6};
             ant newAnt = ant(nodes,alpha,beta);

@@ -106,7 +106,7 @@ def formDistMat(vertexCoords:list[list[float]],distance,beta:float) -> Mat:
     distMat.init_prox()
     return distMat
 
-def haversineDistance(i:float,j:float) -> float:
+def haversineDistance(i:list[float],j:list[float]) -> float:
     '''
         Use haversine forumla for finding distances between longitude and latitude coords
         i: first position
