@@ -59,8 +59,9 @@ def main() -> None:
     evaporationCoeff = 0.1
     q = 1
     limit = int(input("Enter row limit for data: "))
-    coords = loadCSV("gb.csv",1,2,True,limit=limit)
-    distMat = formDistMat(coords, haversineDistance, β)
+    # coords = loadCSV("gb.csv",1,2,True,limit=limit)
+    coords = loadTSP("datasets_tsp_att48_xy.txt",limit=limit)
+    distMat = formDistMat(coords, pythagoreanDistance, β)
     tau  = np.ones(distMat.shape)
     antCount = int(input("How many ants do you want to simulate: "))
     iterations = int(input("How many iterations do you want to simulate: "))
@@ -159,6 +160,20 @@ def loadCSV(filename:str,index1:int,index2:int,header:bool,limit:int) -> list[li
             # Add the indexed items from the current row to the list of coordinates
             coords.append([float(row[index1]),float(row[index2])])
     
+    return coords
+
+def loadTSP(filename:str,limit:int) -> list[list[float]]:
+    # Empty list of vertex coordinates
+    coords = []
+    # TSP file reference
+    tspFile = open(filename)
+    
+    for row in tspFile:
+        nums = row.split()
+        coords.append([int(nums[0]),int(nums[1])])
+
+    tspFile.close()
+
     return coords
 
 def progressBar(data:float,string:str="") -> None:
