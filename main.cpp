@@ -39,10 +39,10 @@ static void runACO()
 //        {5,  4,  1,  4,  2,  1,  0}
 //    };
 
-    double size = 10;
+    int size = 50;
 
-    distanceMatrix *distMat = new distanceMatrix(size);
-    distMat->loadFile("gb.csv",0);
+    distanceMatrix distMat = distanceMatrix();
+    distMat.loadFile("C:/Users/georg/CSYear3/AntColonyOptimisation/gb.csv",size);
 
     double alpha = 1;
     double beta = 2;
@@ -94,9 +94,12 @@ static void runACO()
         }
 
         for (int a = 0; a < antCount; a++) {
-            std::vector<int> nodes = {0,1,2,3,4,5,6};
+            std::vector<int> nodes;
+            for (int i = 0; i < size; i++){
+                nodes.push_back(i);
+            }
             ant newAnt = ant(nodes,alpha,beta);
-            newAnt.move(tau,distMat, alpha, beta);
+            newAnt.move(tau,distMat.getAll(), alpha, beta);
             std::vector<int> route = newAnt.getRoute();
             if(newAnt.getCost() < bestCost)
             {
@@ -131,6 +134,8 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     MainWindow w;
+
+    std::cout << "Begin \n";
 
     QPushButton *b = w.findChild<QPushButton*>("pushButton");
 

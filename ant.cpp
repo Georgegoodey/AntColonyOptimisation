@@ -21,7 +21,7 @@ ant::ant(std::vector<int> nodes, double alpha, double beta)
     beta = beta;
 }
 
-void ant::move(std::vector<std::vector<double>> tau, double **eta, double alpha, double beta)
+void ant::move(std::vector<std::vector<double>> tau, std::vector<std::vector<double>> eta, double alpha, double beta)
 {
     int originalNode = node;
     while(!remaining.empty())
@@ -48,7 +48,7 @@ std::vector<int> ant::getRoute()
     return route;
 }
 
-double ant::probabilityIJ(int i, int j, std::vector<std::vector<double>> tau, double **eta, double alpha, double beta)
+double ant::probabilityIJ(int i, int j, std::vector<std::vector<double>> tau, std::vector<std::vector<double>> eta, double alpha, double beta)
 {
     if(eta[i][j] == 0)
     {
@@ -58,7 +58,7 @@ double ant::probabilityIJ(int i, int j, std::vector<std::vector<double>> tau, do
     return pheromoneProx;
 }
 
-int ant::nextNode(std::vector<std::vector<double>> tau, double **eta, double alpha, double beta)
+int ant::nextNode(std::vector<std::vector<double>> tau, std::vector<std::vector<double>> eta, double alpha, double beta)
 {
     std::vector<double> probs;
 

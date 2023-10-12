@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1600</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,10 +17,10 @@
    <widget class="QGraphicsView" name="graphicsView">
     <property name="geometry">
      <rect>
-      <x>510</x>
-      <y>10</y>
-      <width>271</width>
-      <height>211</height>
+      <x>800</x>
+      <y>0</y>
+      <width>800</width>
+      <height>600</height>
      </rect>
     </property>
    </widget>
@@ -29,7 +29,7 @@
      <rect>
       <x>0</x>
       <y>100</y>
-      <width>200</width>
+      <width>400</width>
       <height>50</height>
      </rect>
     </property>
@@ -42,7 +42,7 @@
      <rect>
       <x>0</x>
       <y>150</y>
-      <width>200</width>
+      <width>400</width>
       <height>50</height>
      </rect>
     </property>
@@ -59,9 +59,9 @@
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
-      <x>100</x>
+      <x>200</x>
       <y>200</y>
-      <width>100</width>
+      <width>200</width>
       <height>50</height>
      </rect>
     </property>
@@ -72,9 +72,9 @@
    <widget class="QLineEdit" name="lineEdit">
     <property name="geometry">
      <rect>
-      <x>100</x>
+      <x>200</x>
       <y>0</y>
-      <width>100</width>
+      <width>200</width>
       <height>50</height>
      </rect>
     </property>
@@ -82,9 +82,9 @@
    <widget class="QLineEdit" name="lineEdit_2">
     <property name="geometry">
      <rect>
-      <x>100</x>
+      <x>200</x>
       <y>50</y>
-      <width>100</width>
+      <width>200</width>
       <height>50</height>
      </rect>
     </property>
@@ -92,9 +92,9 @@
    <widget class="QLabel" name="label_2">
     <property name="geometry">
      <rect>
-      <x>100</x>
+      <x>200</x>
       <y>250</y>
-      <width>100</width>
+      <width>200</width>
       <height>50</height>
      </rect>
     </property>
@@ -107,7 +107,7 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>100</width>
+      <width>200</width>
       <height>50</height>
      </rect>
     </property>
@@ -126,7 +126,7 @@
      <rect>
       <x>0</x>
       <y>50</y>
-      <width>100</width>
+      <width>200</width>
       <height>50</height>
      </rect>
     </property>
@@ -142,7 +142,7 @@
      <rect>
       <x>0</x>
       <y>200</y>
-      <width>100</width>
+      <width>200</width>
       <height>50</height>
      </rect>
     </property>
@@ -158,7 +158,7 @@
      <rect>
       <x>0</x>
       <y>250</y>
-      <width>100</width>
+      <width>200</width>
       <height>50</height>
      </rect>
     </property>
@@ -175,7 +175,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1600</width>
      <height>21</height>
     </rect>
    </property>
