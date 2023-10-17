@@ -1,7 +1,13 @@
 import numpy as np
+import tkinter as tk
+import networkx as nx
 import time
 import math
 import csv
+
+from matplotlib.figure import Figure 
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,  
+NavigationToolbar2Tk) 
 
 from ant import Ant,AntTraverse
 from distance_matrix import Mat
@@ -53,18 +59,137 @@ def mainTraversal() -> None:
     print("Cost of: "+str(bestCost))
 
 def main() -> None:
-    # Hyperparameters and coeffs
-    α = 1
-    β = 2
-    evaporationCoeff = 0.1
-    q = 1
-    limit = int(input("Enter row limit for data: "))
-    # coords = loadCSV("gb.csv",1,2,True,limit=limit)
-    coords = loadTSP("datasets_tsp_att48_xy.txt",limit=limit)
-    distMat = formDistMat(coords, pythagoreanDistance, β)
+    global window
+    window = tk.Tk()
+
+    limitFrame = tk.Frame()
+
+    limitLabel = tk.Label(master=limitFrame, text="Enter row limit for data: ", width=40)
+    limitLabel.pack(side=tk.LEFT)
+
+    limitEntry = tk.Entry(master=limitFrame, width=20)
+    limitEntry.pack(side=tk.RIGHT)
+
+    limitFrame.pack()
+
+    antFrame = tk.Frame()
+
+    antLabel = tk.Label(master=antFrame, text="How many ants do you want to simulate: ", width=40)
+    antLabel.pack(side=tk.LEFT)
+
+    antEntry = tk.Entry(master=antFrame, width=20)
+    antEntry.pack(side=tk.RIGHT)
+
+    antFrame.pack()
+
+    iterationFrame = tk.Frame()
+
+    iterationLabel = tk.Label(master=iterationFrame, text="How many iterations do you want to simulate: ", width=40)
+    iterationLabel.pack(side=tk.LEFT)
+
+    iterationEntry = tk.Entry(master=iterationFrame, width=20)
+    iterationEntry.pack(side=tk.RIGHT)
+
+    iterationFrame.pack()
+
+    alphaFrame = tk.Frame()
+
+    alphaLabel = tk.Label(master=alphaFrame, text="Value of pheromone impact: ", width=40)
+    alphaLabel.pack(side=tk.LEFT)
+
+    alphaScale = tk.Scale(master=alphaFrame, from_=0, to=2, resolution=0.1, orient=tk.HORIZONTAL, tickinterval=1, width=20)
+    alphaScale.set(1)
+    alphaScale.pack(side=tk.RIGHT)
+
+    alphaFrame.pack()
+
+    betaFrame = tk.Frame()
+
+    betaLabel = tk.Label(master=betaFrame, text="Value of proximity impact: ", width=40)
+    betaLabel.pack(side=tk.LEFT)
+
+    betaScale = tk.Scale(master=betaFrame, from_=0, to=4, resolution=0.1, orient=tk.HORIZONTAL, tickinterval=1, width=20)
+    betaScale.set(2)
+    betaScale.pack(side=tk.RIGHT)
+
+    betaFrame.pack()
+
+    evapFrame = tk.Frame()
+
+    evapLabel = tk.Label(master=evapFrame, text="Evaporation Coefficient: ", width=40)
+    evapLabel.pack(side=tk.LEFT)
+
+    evapScale = tk.Scale(master=evapFrame, from_=0, to=1, resolution=0.05, orient=tk.HORIZONTAL, width=20)
+    evapScale.set(0.1)
+    evapScale.pack(side=tk.RIGHT)
+
+    evapFrame.pack()
+
+    startButton = tk.Button(
+        text="Run Sim", 
+        width=25, 
+        command=lambda:runSim(
+            float(alphaScale.get()),
+            float(betaScale.get()),
+            float(evapScale.get()),
+            1,
+            int(limitEntry.get()),
+            int(antEntry.get()),
+            int(iterationEntry.get())
+        )
+    )
+    startButton.pack()
+
+    # plot_button = tk.Button(master = window,  
+    #                  command = plot, 
+    #                  height = 2,  
+    #                  width = 10, 
+    #                  text = "Plot") 
+  
+    # # place the button  
+    # # in main window 
+    # plot_button.pack() 
+
+    fig = Figure(figsize = (5, 5), dpi = 100) 
+
+    # adding the subplot 
+    global plot1
+    plot1 = fig.add_subplot(111) 
+  
+    # plotting the graph 
+    plot1.plot()
+
+    # creating the Tkinter canvas 
+    # containing the Matplotlib figure 
+    global canvas
+    canvas = FigureCanvasTkAgg(fig, 
+                               master = window)   
+    canvas.draw() 
+  
+    # placing the canvas on the Tkinter window 
+    canvas.get_tk_widget().pack() 
+ 
+    window.mainloop()
+    # runSim(1,2,0.1,1)
+
+def plot(G): 
+
+    canvas.get_tk_widget().delete("all")
+    # Create a NetworkX graph
+
+    # pos = nx.spring_layout(G)
+    pos = {node: coords for node, coords in nx.get_node_attributes(G, "pos").items()}
+    nx.draw(G, pos, with_labels=True, node_size=300, node_color="skyblue", ax=plot1)
+    canvas.draw()
+
+def runSim(α,β,evaporationCoeff,q,limit,antCount,iterations) -> None:
+    # limit = int(input("Enter row limit for data: "))
+    coords = loadCSV("gb.csv",1,2,True,limit=limit)
+    # coords = loadTSP("datasets_tsp_att48_xy.txt",limit=limit)
+    distMat = formDistMat(coords, haversineDistance, β)
     tau  = np.ones(distMat.shape)
-    antCount = int(input("How many ants do you want to simulate: "))
-    iterations = int(input("How many iterations do you want to simulate: "))
+    # antCount = int(input("How many ants do you want to simulate: "))
+    # iterations = int(input("How many iterations do you want to simulate: "))
     # Python version of infinitely high cost
     bestCost = float("inf")
     bestRoute = []
@@ -91,6 +216,12 @@ def main() -> None:
     print("Cost of: "+str(bestCost))
     print("Time taken: "+str(totalTime))
     print("Time per ant: "+str(totalTime/(iterations*antCount)))
+    graph = nx.Graph()
+    for r in range(len(bestRoute)-1):
+        node = bestRoute[r]
+        graph.add_node(node,pos=(coords[node][1], coords[node][0]))
+        graph.add_edge(node, bestRoute[r+1])
+    plot(graph)
 
 def formDistMat(vertexCoords:list[list[float]],distance,beta:float) -> Mat:
     '''
