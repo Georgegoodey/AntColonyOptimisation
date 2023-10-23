@@ -2,6 +2,7 @@ import numpy as np
 import tkinter as tk
 import networkx as nx
 import time
+import threading
 import math
 import csv
 
@@ -64,30 +65,33 @@ def main() -> None:
 
     limitFrame = tk.Frame()
 
-    limitLabel = tk.Label(master=limitFrame, text="Enter row limit for data: ", width=40)
+    limitLabel = tk.Label(master=limitFrame, text="How many nodes: ", width=40)
     limitLabel.pack(side=tk.LEFT)
 
     limitEntry = tk.Entry(master=limitFrame, width=20)
+    limitEntry.insert(0,"20")
     limitEntry.pack(side=tk.RIGHT)
 
     limitFrame.pack()
 
     antFrame = tk.Frame()
 
-    antLabel = tk.Label(master=antFrame, text="How many ants do you want to simulate: ", width=40)
+    antLabel = tk.Label(master=antFrame, text="How many ants: ", width=40)
     antLabel.pack(side=tk.LEFT)
 
     antEntry = tk.Entry(master=antFrame, width=20)
+    antEntry.insert(0,"30")
     antEntry.pack(side=tk.RIGHT)
 
     antFrame.pack()
 
     iterationFrame = tk.Frame()
 
-    iterationLabel = tk.Label(master=iterationFrame, text="How many iterations do you want to simulate: ", width=40)
+    iterationLabel = tk.Label(master=iterationFrame, text="How many iterations: ", width=40)
     iterationLabel.pack(side=tk.LEFT)
 
     iterationEntry = tk.Entry(master=iterationFrame, width=20)
+    iterationEntry.insert(0,"30")
     iterationEntry.pack(side=tk.RIGHT)
 
     iterationFrame.pack()
@@ -128,7 +132,7 @@ def main() -> None:
     startButton = tk.Button(
         text="Run Sim", 
         width=25, 
-        command=lambda:runSim(
+        command=lambda:runThread(
             float(alphaScale.get()),
             float(betaScale.get()),
             float(evapScale.get()),
@@ -140,24 +144,19 @@ def main() -> None:
     )
     startButton.pack()
 
-    # plot_button = tk.Button(master = window,  
-    #                  command = plot, 
-    #                  height = 2,  
-    #                  width = 10, 
-    #                  text = "Plot") 
-  
-    # # place the button  
-    # # in main window 
-    # plot_button.pack() 
+    progressFrame = tk.Frame()
 
+    global progressLabel
+    progressLabel = tk.Label(master=progressFrame, text="", width=60)
+    progressLabel.pack(side=tk.LEFT)
+
+    progressFrame.pack()
+
+    global fig
     fig = Figure(figsize = (5, 5), dpi = 100) 
-
-    # adding the subplot 
-    global plot1
-    plot1 = fig.add_subplot(111) 
   
     # plotting the graph 
-    plot1.plot()
+    # plot1.plot()
 
     # creating the Tkinter canvas 
     # containing the Matplotlib figure 
@@ -165,22 +164,46 @@ def main() -> None:
     canvas = FigureCanvasTkAgg(fig, 
                                master = window)   
     canvas.draw() 
-  
-    # placing the canvas on the Tkinter window 
+
     canvas.get_tk_widget().pack() 
  
+    global graph
+    graph = nx.Graph()
+
+    window.after(0, redrawGraph)
     window.mainloop()
     # runSim(1,2,0.1,1)
 
-def plot(G): 
+def runThread(alphaScale,betaScale,evapScale,q,limitEntry,antEntry,iterationEntry):
+    t = threading.Thread(target=lambda:runSim(
+        float(alphaScale),
+        float(betaScale),
+        float(evapScale),
+        q,
+        int(limitEntry),
+        int(antEntry),
+        int(iterationEntry)
+    ))
+    t.start()
 
-    canvas.get_tk_widget().delete("all")
+def redrawGraph(): 
+    fig.clf()
+    # canvas.draw()
+    plot1 = fig.add_subplot(111) 
     # Create a NetworkX graph
 
     # pos = nx.spring_layout(G)
-    pos = {node: coords for node, coords in nx.get_node_attributes(G, "pos").items()}
-    nx.draw(G, pos, with_labels=True, node_size=300, node_color="skyblue", ax=plot1)
+    pos = {node: coords for node, coords in nx.get_node_attributes(graph, "pos").items()}
+    nx.draw(graph, pos, with_labels=False, node_size=50, node_color="#4169E1", ax=plot1)
     canvas.draw()
+    window.after(100,redrawGraph)
+
+def updateGraph(route, coords):
+    graph.clear()
+    for r in range(len(route)-1):
+        node = route[r]
+        graph.add_node(node,pos=(coords[node][1], coords[node][0]))
+        graph.add_edge(node, route[r+1])
 
 def runSim(α,β,evaporationCoeff,q,limit,antCount,iterations) -> None:
     # limit = int(input("Enter row limit for data: "))
@@ -205,9 +228,11 @@ def runSim(α,β,evaporationCoeff,q,limit,antCount,iterations) -> None:
             if(ant.cost < bestCost):
                 bestCost = ant.cost
                 bestRoute = ant.route
+                updateGraph(bestRoute,coords=coords)
             for r in range(len(ant.route)-1):
                 tauChange[ant.route[r]][ant.route[r+1]] += q / ant.cost
             progressBar((i/iterations)+((a/(len(ants))/iterations)))
+            progressBarLabel((i/iterations)+((a/(len(ants))/iterations)))
         tau *= (1-evaporationCoeff)
         tau += tauChange / antCount
     endTime = time.time()
@@ -216,12 +241,7 @@ def runSim(α,β,evaporationCoeff,q,limit,antCount,iterations) -> None:
     print("Cost of: "+str(bestCost))
     print("Time taken: "+str(totalTime))
     print("Time per ant: "+str(totalTime/(iterations*antCount)))
-    graph = nx.Graph()
-    for r in range(len(bestRoute)-1):
-        node = bestRoute[r]
-        graph.add_node(node,pos=(coords[node][1], coords[node][0]))
-        graph.add_edge(node, bestRoute[r+1])
-    plot(graph)
+    updateGraph(bestRoute,coords=coords)
 
 def formDistMat(vertexCoords:list[list[float]],distance,beta:float) -> Mat:
     '''
@@ -318,6 +338,18 @@ def progressBar(data:float,string:str="") -> None:
     percentOver4 = int(percent/4)
     # Prints out the progress bar, ending in an escape character "\r" so that it keeps printing on the same line everytime
     print(string+"Training Progress: "+str(percent)+"% "+("█"*(percentOver4))+("▒"*(25-percentOver4)), end="\r")
+
+def progressBarLabel(data:float,string:str="") -> None:
+    '''
+        data: float between 0-1
+        string: a string to be displayed after the progress bar
+    '''
+    # Gets position of index in list over list length as a floored percentage
+    percent = int(np.floor(data*100))
+    # Calculates half the percentage, this provides only 50 characters and a less excessive progress bar
+    percentOver4 = int(percent/4)
+    # Prints out the progress bar, ending in an escape character "\r" so that it keeps printing on the same line everytime
+    progressLabel.config(text=string+"Training Progress: "+str(percent)+"% "+("█"*(percentOver4))+("▒"*(25-percentOver4)))
 
 if __name__ == "__main__":
     main()
