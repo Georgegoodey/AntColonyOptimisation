@@ -66,12 +66,20 @@ def mainSim() -> None:
         for j in range(6):
             if(i == 0 or i == 5 or j == 0 or j == 5):
                 tau.set(i,j,-1)
-    tau.set(1,2,6)
-    tau.set(2,3,1)
-    tau.set(3,3,1)
+            else:
+                tau.set(i,j,1)
+    tau.set(1,2,10)
+    tau.set(2,3,3)
+    tau.set(3,3,3)
     ant = AntSim([4,3],1,2)
-    AntSim.move(tau)
-    
+    tau.evaporate(0.05)
+    print(ant.x,ant.y)
+    ant.move(tau)
+    print(ant.x,ant.y)
+    ant.move(tau)
+    print(ant.x,ant.y)
+    ant.move(tau)
+    print(ant.x,ant.y)
 
 def main() -> None:
     global window
@@ -366,4 +374,4 @@ def progressBarLabel(data:float,string:str="") -> None:
     progressLabel.config(text=string+"Training Progress: "+str(percent)+"% "+("█"*(percentOver4))+("▒"*(25-percentOver4)))
 
 if __name__ == "__main__":
-    main()
+    mainSim()

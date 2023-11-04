@@ -25,4 +25,9 @@ class PMat:
         '''
         corners = [self.content[i-1][j-1],self.content[i-1][j+1],self.content[i+1][j-1],self.content[i+1][j+1]]
         sides = [self.content[i-1][j],self.content[i][j-1],self.content[i][j+1],self.content[i+1][j]]
-        return corners,sides
+        return corners+sides
+
+    def evaporate(self,val:float) -> None:
+        for row in self.content:
+            for num in row:
+                num *= (1-val)
