@@ -1,6 +1,8 @@
 import random
+import math
 
 from distance_matrix import Mat
+from pheromone_matrix import PMat
 
 class AntTraverse:
 
@@ -55,7 +57,7 @@ class Ant:
 
     node: int
     remaining: list[int]
-    cost: int
+    cost: float
     route: list[int]
     alpha: float
     beta: float
@@ -104,3 +106,44 @@ class Ant:
         self.route.append(originalNode)
         self.cost += η.get(self.node,originalNode)
         self.node = originalNode
+
+class AntSim:
+
+    x: int
+    y: int
+    cost:  float
+    alpha: float
+    beta: float
+
+    def __init__(self, pos:list[int], alpha:float, beta:float) -> None:
+        self.x = pos[0]
+        self.y = pos[1]
+        self.cost = 0
+        self.alpha = alpha
+        self.beta = beta
+    
+    def probabilityIJ(self,tau,eta) -> float:
+        if(tau < 0):
+            return 0
+        pheromoneProx = tau**self.alpha * eta**-self.beta
+        return pheromoneProx
+
+    def nextNode(self,tau,eta) -> int:
+        probs = []
+        # Calculate denominator while calculating ij probability as it stays the same regardless of j and only needs to be calced once
+        sumAllowed = 0
+        for n in range(len(tau)):
+            prob = self.probabilityIJ(tau[n],eta[n])
+            sumAllowed += prob
+            probs.append(prob)
+        for n,i in enumerate(probs):
+            probs[n] = i / sumAllowed 
+        return random.choices(range(len(tau)),weights=probs,k=1)[0]
+    
+    def move(self,τ:PMat) -> None:
+        tau = τ.get(self.x, self.y)
+        r2 = math.sqrt(2)
+        eta = [r2,r2,r2,r2,1,1,1,1]
+        newPos = self.nextNode(tau,eta)
+        # self.cost += η.get(self.node,newNode)
+        self.pos = newPos

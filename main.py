@@ -10,8 +10,9 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,  
 NavigationToolbar2Tk) 
 
-from ant import Ant,AntTraverse
+from ant import Ant,AntTraverse,AntSim
 from distance_matrix import Mat
+from pheromone_matrix import PMat
 
 def mainTraversal() -> None:
     # adjMat  =  [[0,1,2,0],[1,0,0,1],[2,0,0,2],[0,1,2,0]]
@@ -58,6 +59,19 @@ def mainTraversal() -> None:
     print("Done")
     print("Best Route: "+str(bestRoute))
     print("Cost of: "+str(bestCost))
+
+def mainSim() -> None:
+    tau = PMat(size=6)
+    for i in range(6):
+        for j in range(6):
+            if(i == 0 or i == 5 or j == 0 or j == 5):
+                tau.set(i,j,-1)
+    tau.set(1,2,6)
+    tau.set(2,3,1)
+    tau.set(3,3,1)
+    ant = AntSim([4,3],1,2)
+    AntSim.move(tau)
+    
 
 def main() -> None:
     global window
@@ -172,10 +186,10 @@ def main() -> None:
 
     window.after(0, redrawGraph)
     window.mainloop()
-    # runSim(1,2,0.1,1)
+    # runTSP(1,2,0.1,1)
 
 def runThread(alphaScale,betaScale,evapScale,q,limitEntry,antEntry,iterationEntry):
-    t = threading.Thread(target=lambda:runSim(
+    t = threading.Thread(target=lambda:runTSP(
         float(alphaScale),
         float(betaScale),
         float(evapScale),
@@ -189,7 +203,7 @@ def runThread(alphaScale,betaScale,evapScale,q,limitEntry,antEntry,iterationEntr
 def redrawGraph(): 
     fig.clf()
     # canvas.draw()
-    plot1 = fig.add_subplot(111) 
+    plot1 = fig.add_subplot(111)
     # Create a NetworkX graph
 
     # pos = nx.spring_layout(G)
@@ -205,7 +219,7 @@ def updateGraph(route, coords):
         graph.add_node(node,pos=(coords[node][1], coords[node][0]))
         graph.add_edge(node, route[r+1])
 
-def runSim(α,β,evaporationCoeff,q,limit,antCount,iterations) -> None:
+def runTSP(α,β,evaporationCoeff,q,limit,antCount,iterations) -> None:
     # limit = int(input("Enter row limit for data: "))
     coords = loadCSV("gb.csv",1,2,True,limit=limit)
     # coords = loadTSP("datasets_tsp_att48_xy.txt",limit=limit)
