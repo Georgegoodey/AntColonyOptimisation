@@ -138,7 +138,6 @@ class AntSim:
             probs.append(prob)
         for n,i in enumerate(probs):
             probs[n] = i / sumAllowed 
-        print(probs)
         return random.choices(range(len(tau)),weights=probs,k=1)[0]
     
     def calcNewPos(self,x,y,index):
@@ -163,7 +162,6 @@ class AntSim:
 
     def move(self,τ:PMat) -> None:
         tau = τ.get(self.x, self.y)
-        print(tau)
         r2 = math.sqrt(2)
         eta = [r2,r2,r2,r2,1,1,1,1]
         newPosIndex = self.nextNode(tau,eta)

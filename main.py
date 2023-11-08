@@ -61,25 +61,46 @@ def mainTraversal() -> None:
     print("Cost of: "+str(bestCost))
 
 def mainSim() -> None:
-    tau = PMat(size=6)
-    for i in range(6):
-        for j in range(6):
-            if(i == 0 or i == 5 or j == 0 or j == 5):
+
+    WIDTH, HEIGHT = 480, 480
+
+    window = tk.Tk()
+    canvas = tk.Canvas(window, width=WIDTH, height=HEIGHT, bg="#000000")
+    canvas.pack()
+    global img
+    img = tk.PhotoImage(width=WIDTH, height=HEIGHT)
+    canvas.create_image((WIDTH/2, HEIGHT/2), image=img, state="normal")
+
+    tau = PMat(size=WIDTH)
+    for i in range(HEIGHT):
+        for j in range(WIDTH):
+            if(i == 0 or i == HEIGHT-1 or j == 0 or j == WIDTH-1):
                 tau.set(i,j,-1)
             else:
                 tau.set(i,j,1)
-    tau.set(1,2,10)
-    tau.set(2,3,3)
-    tau.set(3,3,3)
-    ant = AntSim([4,3],1,2)
+    window.after(0, lambda:redrawPixels(tau=tau))
+    window.mainloop()
+    # tau.set(1,2,10)
+    # tau.set(2,3,3)
+    # tau.set(3,3,3)
+    ants = []
+    for i in range(100000):
+        ant = AntSim([4,3],1,2)
+        ants.append(ant)
     tau.evaporate(0.05)
     print(ant.x,ant.y)
-    ant.move(tau)
+    for i in ants:
+        ant.move(tau)
     print(ant.x,ant.y)
     ant.move(tau)
     print(ant.x,ant.y)
     ant.move(tau)
     print(ant.x,ant.y)
+
+def redrawPixels(tau):
+    for i in tau:
+        img.put("#ffffff", (x//4,y))
+    window.after(100,redrawPixels)
 
 def main() -> None:
     global window
