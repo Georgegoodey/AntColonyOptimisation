@@ -64,6 +64,7 @@ def mainSim() -> None:
 
     WIDTH, HEIGHT = 480, 480
 
+    global window
     window = tk.Tk()
     canvas = tk.Canvas(window, width=WIDTH, height=HEIGHT, bg="#000000")
     canvas.pack()
@@ -78,28 +79,49 @@ def mainSim() -> None:
                 tau.set(i,j,-1)
             else:
                 tau.set(i,j,1)
-    window.after(0, lambda:redrawPixels(tau=tau))
-    window.mainloop()
+    
     # tau.set(1,2,10)
     # tau.set(2,3,3)
     # tau.set(3,3,3)
+    global ants
     ants = []
-    for i in range(100000):
+    for i in range(1000):
         ant = AntSim([4,3],1,2)
         ants.append(ant)
-    tau.evaporate(0.05)
-    print(ant.x,ant.y)
-    for i in ants:
-        ant.move(tau)
-    print(ant.x,ant.y)
-    ant.move(tau)
-    print(ant.x,ant.y)
-    ant.move(tau)
-    print(ant.x,ant.y)
 
-def redrawPixels(tau):
-    for i in tau:
-        img.put("#ffffff", (x//4,y))
+    # runSimThread(tau=tau)
+
+    startButton = tk.Button(
+        text="Run Sim", 
+        width=25, 
+        command=lambda:runSimThread(tau=tau)
+    )
+    startButton.pack()
+
+    window.after(0, lambda:redrawPixels())
+    window.mainloop()
+    # tau.evaporate(0.05)
+    # print(ant.x,ant.y)
+    
+    # print(ant.x,ant.y)
+    # ant.move(tau)
+    # print(ant.x,ant.y)
+    # ant.move(tau)
+    # print(ant.x,ant.y)
+
+def runSimThread(tau):
+    t = threading.Thread(target=lambda:runSim(tau=tau))
+    t.start()
+
+def runSim(tau):
+    for i in range(10000):
+        for ant in ants:
+            ant.move(tau)
+
+def redrawPixels():
+    img.blank()
+    for ant in ants:
+        img.put("#ffffff", (ant.x,ant.y))
     window.after(100,redrawPixels)
 
 def main() -> None:
