@@ -72,6 +72,9 @@ def mainSim() -> None:
     img = tk.PhotoImage(width=WIDTH, height=HEIGHT)
     canvas.create_image((WIDTH/2, HEIGHT/2), image=img, state="normal")
 
+    global antMap
+    antMap = [[0] * WIDTH for i in range(WIDTH)]
+
     tau = PMat(size=WIDTH)
     for i in range(HEIGHT):
         for j in range(WIDTH):
@@ -83,10 +86,10 @@ def mainSim() -> None:
     # tau.set(1,2,10)
     # tau.set(2,3,3)
     # tau.set(3,3,3)
-    global ants
     ants = []
     for i in range(1000):
         ant = AntSim([4,3],1,2)
+        antMap[4][3] += 1
         ants.append(ant)
 
     # runSimThread(tau=tau)
@@ -94,34 +97,34 @@ def mainSim() -> None:
     startButton = tk.Button(
         text="Run Sim", 
         width=25, 
-        command=lambda:runSimThread(tau=tau)
+        command=lambda:runSimThread(tau=tau, ants=ants)
     )
     startButton.pack()
 
     window.after(0, lambda:redrawPixels())
     window.mainloop()
     # tau.evaporate(0.05)
-    # print(ant.x,ant.y)
-    
-    # print(ant.x,ant.y)
-    # ant.move(tau)
-    # print(ant.x,ant.y)
-    # ant.move(tau)
-    # print(ant.x,ant.y)
 
-def runSimThread(tau):
-    t = threading.Thread(target=lambda:runSim(tau=tau))
+def runSimThread(tau, ants):
+    t = threading.Thread(target=lambda:runSim(tau=tau, ants=ants))
     t.start()
 
-def runSim(tau):
-    for i in range(10000):
+def runSim(tau, ants):
+    print("started")
+    for i in range(50):
         for ant in ants:
+            antMap[ant.x][ant.y] -= 1
             ant.move(tau)
+            antMap[ant.x][ant.y] += 1
+    print("done")
 
 def redrawPixels():
+    print("redrawing")
     img.blank()
-    for ant in ants:
-        img.put("#ffffff", (ant.x,ant.y))
+    for i,row in enumerate(antMap):
+        for j,item in enumerate(row):
+            if(item > 0):
+                img.put("#ffffff", (i,j))
     window.after(100,redrawPixels)
 
 def main() -> None:
@@ -253,11 +256,8 @@ def runThread(alphaScale,betaScale,evapScale,q,limitEntry,antEntry,iterationEntr
 
 def redrawGraph(): 
     fig.clf()
-    # canvas.draw()
     plot1 = fig.add_subplot(111)
-    # Create a NetworkX graph
 
-    # pos = nx.spring_layout(G)
     pos = {node: coords for node, coords in nx.get_node_attributes(graph, "pos").items()}
     nx.draw(graph, pos, with_labels=False, node_size=50, node_color="#4169E1", ax=plot1)
     canvas.draw()
@@ -276,8 +276,6 @@ def runTSP(α,β,evaporationCoeff,q,limit,antCount,iterations) -> None:
     # coords = loadTSP("datasets_tsp_att48_xy.txt",limit=limit)
     distMat = formDistMat(coords, haversineDistance, β)
     tau  = np.ones(distMat.shape)
-    # antCount = int(input("How many ants do you want to simulate: "))
-    # iterations = int(input("How many iterations do you want to simulate: "))
     # Python version of infinitely high cost
     bestCost = float("inf")
     bestRoute = []
