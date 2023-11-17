@@ -63,6 +63,7 @@ def mainTraversal() -> None:
 def mainSim() -> None:
 
     WIDTH, HEIGHT = 480, 480
+    SIMWIDTH = 48
 
     global window
     window = tk.Tk()
@@ -73,12 +74,12 @@ def mainSim() -> None:
     canvas.create_image((WIDTH/2, HEIGHT/2), image=img, state="normal")
 
     global antMap
-    antMap = [[0] * WIDTH for i in range(WIDTH)]
+    antMap = [[0] * SIMWIDTH for i in range(SIMWIDTH)]
 
-    tau = PMat(size=WIDTH)
-    for i in range(HEIGHT):
-        for j in range(WIDTH):
-            if(i == 0 or i == HEIGHT-1 or j == 0 or j == WIDTH-1):
+    tau = PMat(size=SIMWIDTH)
+    for i in range(SIMWIDTH):
+        for j in range(SIMWIDTH):
+            if(i == 0 or i == SIMWIDTH-1 or j == 0 or j == SIMWIDTH-1):
                 tau.set(i,j,-1)
             else:
                 tau.set(i,j,1)
@@ -87,7 +88,7 @@ def mainSim() -> None:
     # tau.set(2,3,3)
     # tau.set(3,3,3)
     ants = []
-    for i in range(1000):
+    for i in range(100):
         ant = AntSim([4,3],1,2)
         antMap[4][3] += 1
         ants.append(ant)
@@ -111,21 +112,51 @@ def runSimThread(tau, ants):
 
 def runSim(tau, ants):
     print("started")
-    for i in range(50):
+    for i in range(1000):
         for ant in ants:
             antMap[ant.x][ant.y] -= 1
             ant.move(tau)
+            tau.add(ant.x,ant.y,1/ant.cost)
             antMap[ant.x][ant.y] += 1
+        tau.evaporate(0.05)
+        # redrawPixels()
     print("done")
 
 def redrawPixels():
-    print("redrawing")
+    # print("redrawing")
     img.blank()
+    highest = 0
+    for row in antMap:
+        if(max(row)>highest):
+            highest = max(row)
     for i,row in enumerate(antMap):
         for j,item in enumerate(row):
             if(item > 0):
-                img.put("#ffffff", (i,j))
+                drawAnt(i*10,j*10,(item/highest))
     window.after(100,redrawPixels)
+
+def drawAnt(x,y,val):
+    # x,y = pos
+    data = []
+    colour = '#'+str(hex(int(255*val))[2:])+str(hex(int(255*val))[2:])+str(hex(int(255*val))[2:])
+    # colour = '#ffffff'
+    for i in range(10):
+        # data.extend('{' + ' '.join('#ffffff' for j in range(10)) + '}')
+        for j in range(10):
+        #     print(x+i,y+j)
+            
+            img.put(colour, (x+i,y+j))
+    # image_array = np.array(img)
+    # image_array[y:y+10, x:x+10] = '#ffffff'
+    # img.put(" ".join(data), to=(x, y))
+    # img.put(data)
+
+def draw_rectangle(x, y, color):
+    pixel_data = []
+    for i in range(10):
+        for j in range(10):
+            pixel_data.extend((x + i, y + j, color))
+    img.put(pixel_data)
 
 def main() -> None:
     global window
@@ -294,10 +325,12 @@ def runTSP(α,β,evaporationCoeff,q,limit,antCount,iterations) -> None:
                 updateGraph(bestRoute,coords=coords)
             for r in range(len(ant.route)-1):
                 tauChange[ant.route[r]][ant.route[r+1]] += q / ant.cost
+            tau += tauChange / antCount
+            tauChange = np.zeros(distMat.shape)
             progressBar((i/iterations)+((a/(len(ants))/iterations)))
             progressBarLabel((i/iterations)+((a/(len(ants))/iterations)))
         tau *= (1-evaporationCoeff)
-        tau += tauChange / antCount
+        
     endTime = time.time()
     totalTime = endTime - startTime
     print("Best Route: "+str(bestRoute))
@@ -415,4 +448,4 @@ def progressBarLabel(data:float,string:str="") -> None:
     progressLabel.config(text=string+"Training Progress: "+str(percent)+"% "+("█"*(percentOver4))+("▒"*(25-percentOver4)))
 
 if __name__ == "__main__":
-    mainSim()
+    main()

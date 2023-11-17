@@ -1,6 +1,8 @@
 import random
 import math
 
+from collections import deque
+
 from distance_matrix import Mat
 from pheromone_matrix import PMat
 
@@ -114,6 +116,7 @@ class AntSim:
     cost:  float
     alpha: float
     beta: float
+    lastMove: int
 
     def __init__(self, pos:list[int], alpha:float, beta:float) -> None:
         self.x = pos[0]
@@ -121,6 +124,7 @@ class AntSim:
         self.cost = 0
         self.alpha = alpha
         self.beta = beta
+        self.lastMove = 3
     
     def probabilityIJ(self,tau,eta) -> float:
         if(tau < 0):
@@ -142,29 +146,31 @@ class AntSim:
     
     def calcNewPos(self,x,y,index):
         if(index==0):
-            return [x-1,y-1]
+            return [x-1,y]
         elif(index==1):
             return [x-1,y+1]
         elif(index==2):
-            return [x+1,y-1]
+            return [x,y+1]
         elif(index==3):
             return [x+1,y+1]
         elif(index==4):
-            return [x-1,y]
-        elif(index==5):
-            return [x,y-1]
-        elif(index==6):
-            return [x,y+1]
-        elif(index==7):
             return [x+1,y]
+        elif(index==5):
+            return [x+1,y-1]
+        elif(index==6):
+            return [x,y-1]
+        elif(index==7):
+            return [x-1,y-1]
         else:
             return []
 
     def move(self,τ:PMat) -> None:
         tau = τ.get(self.x, self.y)
         r2 = math.sqrt(2)
-        eta = [r2,r2,r2,r2,1,1,1,1]
+        eta = deque([1,r2,2,2*r2,4,2*r2,2,r2])
+        eta.rotate(self.lastMove)
         newPosIndex = self.nextNode(tau,eta)
+        self.cost = eta[newPosIndex]
+        self.lastMove = newPosIndex
         newPos = self.calcNewPos(self.x,self.y,newPosIndex)
-        # self.cost += η.get(self.node,newNode)
         self.x,self.y = newPos
