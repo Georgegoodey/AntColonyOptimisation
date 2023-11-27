@@ -32,6 +32,9 @@ class PMat:
         neighbours = [c[i-1][j],c[i-1][j+1],c[i][j+1],c[i+1][j+1],c[i+1][j],c[i+1][j-1],c[i][j-1],c[i-1][j-1]]
         return neighbours
 
+    def all(self) -> list[list[float]]:
+        return self.content
+
     def evaporate(self,val:float) -> None:
         '''
             Evaporates the values in the matrix

@@ -10,55 +10,9 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,  
 NavigationToolbar2Tk) 
 
-from ant import Ant,AntTraverse,AntSim
+from ant import Ant,AntSim
 from distance_matrix import Mat
 from pheromone_matrix import PMat
-
-def mainTraversal() -> None:
-    # adjMat  =  [[0,1,2,0],[1,0,0,1],[2,0,0,2],[0,1,2,0]]
-    adjMat = [
-        # 0   1   2   3   4   5   6   7   8   9
-        [0,  3,  5,  0,  0,  0,  0,  0,  0,  0],  # Vertex 0
-        [0,  0,  2,  7,  0,  0,  0,  0,  0,  4],  # Vertex 1
-        [0,  0,  0,  0,  4,  0,  0,  2,  2,  0],  # Vertex 2
-        [0,  0,  0,  0,  6,  0,  8,  0,  0,  8],  # Vertex 3
-        [8,  3,  0,  0,  0,  1,  9,  0,  6,  0],  # Vertex 4
-        [0,  2,  0,  0,  1,  0,  2,  0,  0,  0],  # Vertex 5
-        [0,  0,  3,  0,  0,  5,  0,  0,  1,  5],  # Vertex 6
-        [4,  0,  1,  0,  2,  0,  0,  0,  3,  0],  # Vertex 7
-        [0,  2,  0,  5,  0,  7,  0,  4,  0,  4],  # Vertex 8
-        [1,  0,  0,  1,  5,  0,  3,  0,  2,  0],  # Vertex 9
-    ]
-    tau  = np.ones(np.shape(adjMat))
-    print(tau)
-    alpha = 1
-    beta = 2
-    evaporationCoeff = 0.1
-    q = 1
-    antCount = int(input("How many ants do you want to simulate: "))
-    iterations = int(input("How many iterations do you want to simulate: "))
-    start = int(input("Enter start node: "))
-    end = int(input("Enter goal node: "))
-    bestCost = float("inf")
-    bestRoute = []
-    ants = []
-    for i in range(iterations):
-        ants = []
-        tauChange = np.zeros(np.shape(adjMat))
-        for a in range(antCount):
-            ants.append(AntTraverse(start,end,adjMat))
-        for ant in ants:
-            ant.move(tau,alpha,beta)
-            if(ant.cost < bestCost):
-                bestCost = ant.cost
-                bestRoute = ant.route
-            for r in range(len(ant.route)-1):
-                tauChange[ant.route[r]][ant.route[r+1]] += q / ant.cost
-        tau *= (1-evaporationCoeff)
-        tau += tauChange / antCount
-    print("Done")
-    print("Best Route: "+str(bestRoute))
-    print("Cost of: "+str(bestCost))
 
 def mainSim() -> None:
 
@@ -67,6 +21,7 @@ def mainSim() -> None:
 
     global window
     window = tk.Tk()
+    global canvas
     canvas = tk.Canvas(window, width=WIDTH, height=HEIGHT, bg="#000000")
     canvas.pack()
     global img
@@ -84,11 +39,8 @@ def mainSim() -> None:
             else:
                 tau.set(i,j,1)
     
-    # tau.set(1,2,10)
-    # tau.set(2,3,3)
-    # tau.set(3,3,3)
     ants = []
-    for i in range(100):
+    for i in range(500):
         ant = AntSim([4,3],1,2)
         antMap[4][3] += 1
         ants.append(ant)
@@ -102,7 +54,7 @@ def mainSim() -> None:
     )
     startButton.pack()
 
-    window.after(0, lambda:redrawPixels())
+    window.after(0, lambda:redrawPixels(tau))
     window.mainloop()
     # tau.evaporate(0.05)
 
@@ -111,33 +63,61 @@ def runSimThread(tau, ants):
     t.start()
 
 def runSim(tau, ants):
-    print("started")
-    for i in range(1000):
+    for i in range(100):
         for ant in ants:
             antMap[ant.x][ant.y] -= 1
             ant.move(tau)
             tau.add(ant.x,ant.y,1/ant.cost)
             antMap[ant.x][ant.y] += 1
         tau.evaporate(0.05)
-        # redrawPixels()
-    print("done")
+        if(i % 20 == 0):
+            redrawPixels(tau)
 
-def redrawPixels():
-    # print("redrawing")
-    img.blank()
-    highest = 0
+def redrawPixels(tau):
+    canvas.delete("all")
+    colourMap = [["#"] * 48 for i in range(48)]
+    highestPher = 0
+    pherMap = tau.all()
+    for row in pherMap:
+        if(max(row)>highestPher):
+            highestPher = max(row)
+    for i,row in enumerate(pherMap):
+        for j,item in enumerate(row):
+            if(item>0):
+                val = (item/highestPher)
+            else:
+                val = 0
+            r = str(hex(int(255*val))[2:])
+            if(len(r) == 1):
+                r = "0" + r
+            colourMap[i][j] += r
+                # colour = '#'+str(hex(int(255*val))[2:])+str(hex(int(1))[2:])+str(hex(int(1))[2:])
+                # canvas.create_rectangle(i*10,j*10,(i*10)+10,(j*10)+10,fill=colour,width=0)
+    highestAnt = 0
     for row in antMap:
-        if(max(row)>highest):
-            highest = max(row)
+        if(max(row)>highestAnt):
+            highestAnt = max(row)
     for i,row in enumerate(antMap):
         for j,item in enumerate(row):
             if(item > 0):
-                drawAnt(i*10,j*10,(item/highest))
-    window.after(100,redrawPixels)
+                val = (item/highestAnt)
+            else:
+                val = 0
+            g = str(hex(int(255*val))[2:])
+            if(len(g) == 1):
+                g = "0" + g
+            b = str(hex(int(255*val))[2:])
+            if(len(b) == 1):
+                b = "0" + b
+            colourMap[i][j] += g + b
+                # colour = '#'+str(hex(int(255*val))[2:])+str(hex(int(255*val))[2:])+str(hex(int(1))[2:])
+                # canvas.create_rectangle(i*10,j*10,(i*10)+10,(j*10)+10,fill=colour,width=0)
+    for i,row in enumerate(colourMap):
+        for j,item in enumerate(row):
+            canvas.create_rectangle(i*10,j*10,(i*10)+10,(j*10)+10,fill=item,width=0)
+    # window.after(50,redrawPixels)
 
 def drawAnt(x,y,val):
-    # x,y = pos
-    data = []
     colour = '#'+str(hex(int(255*val))[2:])+str(hex(int(255*val))[2:])+str(hex(int(255*val))[2:])
     # colour = '#ffffff'
     for i in range(10):
@@ -254,11 +234,6 @@ def main() -> None:
     global fig
     fig = Figure(figsize = (5, 5), dpi = 100) 
   
-    # plotting the graph 
-    # plot1.plot()
-
-    # creating the Tkinter canvas 
-    # containing the Matplotlib figure 
     global canvas
     canvas = FigureCanvasTkAgg(fig, 
                                master = window)   
@@ -305,7 +280,8 @@ def runTSP(α,β,evaporationCoeff,q,limit,antCount,iterations) -> None:
     # limit = int(input("Enter row limit for data: "))
     coords = loadCSV("gb.csv",1,2,True,limit=limit)
     # coords = loadTSP("datasets_tsp_att48_xy.txt",limit=limit)
-    distMat = formDistMat(coords, haversineDistance, β)
+    distMat = Mat(len(coords),β)
+    distMat.formDistMat(coords,"haversine")
     tau  = np.ones(distMat.shape)
     # Python version of infinitely high cost
     bestCost = float("inf")
@@ -327,59 +303,17 @@ def runTSP(α,β,evaporationCoeff,q,limit,antCount,iterations) -> None:
                 tauChange[ant.route[r]][ant.route[r+1]] += q / ant.cost
             tau += tauChange / antCount
             tauChange = np.zeros(distMat.shape)
-            progressBar((i/iterations)+((a/(len(ants))/iterations)))
+            # progressBar((i/iterations)+((a/(len(ants))/iterations)))
             progressBarLabel((i/iterations)+((a/(len(ants))/iterations)))
         tau *= (1-evaporationCoeff)
         
     endTime = time.time()
     totalTime = endTime - startTime
-    print("Best Route: "+str(bestRoute))
-    print("Cost of: "+str(bestCost))
-    print("Time taken: "+str(totalTime))
-    print("Time per ant: "+str(totalTime/(iterations*antCount)))
+    # print("Best Route: "+str(bestRoute))
+    # print("Cost of: "+str(bestCost))
+    # print("Time taken: "+str(totalTime))
+    # print("Time per ant: "+str(totalTime/(iterations*antCount)))
     updateGraph(bestRoute,coords=coords)
-
-def formDistMat(vertexCoords:list[list[float]],distance,beta:float) -> Mat:
-    '''
-        Forms a distance matrix between all the given vertex coordinates
-        vertexCoords: a list of coordinates for each data point vertex
-        distance: the distance function to be used in the distance matrix calculations
-    '''
-    distMat = Mat(size=len(vertexCoords),beta=beta)
-    for n,i in enumerate(vertexCoords):
-        for m,j in enumerate(vertexCoords):
-            if(n==m):
-                continue
-            distMat.set(n,m,distance(i,j))
-    distMat.init_prox()
-    return distMat
-
-def haversineDistance(i:list[float],j:list[float]) -> float:
-    '''
-        Use haversine forumla for finding distances between longitude and latitude coords
-        i: first position
-        j: second position
-    '''
-    R = 6371e3
-    phiI = i[0] * math.pi / 180
-    phiJ = j[0] * math.pi / 180
-    deltaPhi = (j[0]-i[0]) * math.pi / 180
-    deltaLambda = (j[1]-i[1]) * math.pi / 180
-
-    a = (math.sin(deltaPhi/2) * math.sin(deltaPhi/2)) + (math.cos(phiI) * math.cos(phiJ) * math.sin(deltaLambda/2) * math.sin(deltaLambda/2))
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-    distance = R * c
-    return distance
-
-def pythagoreanDistance(a:float,b:float) -> float:
-    '''
-        Use pythagoras formula to calculate distance between two points
-    '''
-    xDist = abs(a[0]-b[0])
-    yDist = abs(a[1]-b[1])
-    distance = math.sqrt((xDist**2) + (yDist**2))
-
-    return distance
 
 def loadCSV(filename:str,index1:int,index2:int,header:bool,limit:int) -> list[list[float]]:
     '''
@@ -448,4 +382,4 @@ def progressBarLabel(data:float,string:str="") -> None:
     progressLabel.config(text=string+"Training Progress: "+str(percent)+"% "+("█"*(percentOver4))+("▒"*(25-percentOver4)))
 
 if __name__ == "__main__":
-    main()
+    mainSim()
