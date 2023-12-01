@@ -68,7 +68,7 @@ class Ant:
         self.remaining = nodes
         self.node = random.choice(nodes)
         self.remaining.remove(self.node)
-        self.cost = 0
+        self.cost = 10000
         self.route = [self.node]
         self.alpha = alpha
         self.beta = beta
@@ -113,14 +113,18 @@ class AntSim:
     alpha: float
     beta: float
     lastMove: int
+    foundFood: bool
+    mapSize: int
 
-    def __init__(self, pos:list[int], alpha:float, beta:float) -> None:
+    def __init__(self, pos:list[int], alpha:float, beta:float, mapSize:int) -> None:
         self.x = pos[0]
         self.y = pos[1]
-        self.cost = 0
+        self.cost = 2*mapSize
         self.alpha = alpha
         self.beta = beta
         self.lastMove = 3
+        self.foundFood = False
+        self.mapSize = 2*mapSize
     
     def probabilityIJ(self,tau,eta) -> float:
         if(tau < 0):
@@ -160,13 +164,26 @@ class AntSim:
         else:
             return []
 
-    def move(self,τ:PMat) -> None:
-        tau = τ.get(self.x, self.y)
+    def move(self,foodTau:PMat,nestTau:PMat) -> None:
+        if(self.foundFood):
+            tau = nestTau.getNeighbours(self.x, self.y)
+        else:
+            tau = foodTau.getNeighbours(self.x, self.y)
         r2 = math.sqrt(2)
         eta = deque([1,r2,2,2*r2,4,2*r2,2,r2])
         eta.rotate(self.lastMove)
         newPosIndex = self.nextNode(tau,eta)
-        self.cost = eta[newPosIndex]
+        cost = eta[newPosIndex]
+        if(self.cost - cost > 0):
+            self.cost -= cost
+        else:
+            self.cost = 0
         self.lastMove = newPosIndex
         newPos = self.calcNewPos(self.x,self.y,newPosIndex)
         self.x,self.y = newPos
+        if([self.x,self.y] in nestTau.persist):
+            self.foundFood = False
+            self.cost = self.mapSize
+        if([self.x,self.y] in foodTau.persist):
+            self.foundFood = True
+            self.cost = self.mapSize

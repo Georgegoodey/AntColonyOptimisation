@@ -16,8 +16,9 @@ from pheromone_matrix import PMat
 
 def mainSim() -> None:
 
-    WIDTH, HEIGHT = 480, 480
-    SIMWIDTH = 48
+    WIDTH, HEIGHT = 640, 640
+    global SIMWIDTH
+    SIMWIDTH = 64
 
     global window
     window = tk.Tk()
@@ -25,24 +26,34 @@ def mainSim() -> None:
     canvas = tk.Canvas(window, width=WIDTH, height=HEIGHT, bg="#000000")
     canvas.pack()
     global img
-    img = tk.PhotoImage(width=WIDTH, height=HEIGHT)
-    canvas.create_image((WIDTH/2, HEIGHT/2), image=img, state="normal")
+    img = tk.PhotoImage(width=WIDTH, height=HEIGHT,file='doubleBridge.png')
+    # canvas.create_image((WIDTH/2, HEIGHT/2), image=img, state="normal")
 
     global antMap
     antMap = [[0] * SIMWIDTH for i in range(SIMWIDTH)]
 
-    tau = PMat(size=SIMWIDTH)
+    foodTau = PMat(size=SIMWIDTH)
+    nestTau = PMat(size=SIMWIDTH)
     for i in range(SIMWIDTH):
         for j in range(SIMWIDTH):
-            if(i == 0 or i == SIMWIDTH-1 or j == 0 or j == SIMWIDTH-1):
-                tau.set(i,j,-1)
+            if(img.get(i,j)[1] == 255):
+                foodTau.set(i,j,1)
+                foodTau.addPersistant([i,j])
+            elif(img.get(i,j)[2] == 255):
+                nestTau.set(i,j,1)
+                nestTau.addPersistant([i,j])
+            elif(img.get(i,j)[0] == 0):
+                foodTau.set(i,j,0.01)
+                nestTau.set(i,j,0.01)
             else:
-                tau.set(i,j,1)
-    
+                foodTau.set(i,j,-1)
+                nestTau.set(i,j,-1)
+
     ants = []
-    for i in range(500):
-        ant = AntSim([4,3],1,2)
-        antMap[4][3] += 1
+    spawn = [9,33]
+    for i in range(200):
+        ant = AntSim(spawn,1,2,SIMWIDTH)
+        antMap[spawn[0]][spawn[1]] += 1
         ants.append(ant)
 
     # runSimThread(tau=tau)
@@ -50,34 +61,39 @@ def mainSim() -> None:
     startButton = tk.Button(
         text="Run Sim", 
         width=25, 
-        command=lambda:runSimThread(tau=tau, ants=ants)
+        command=lambda:runSimThread(foodTau=foodTau,nestTau=nestTau, ants=ants)
     )
     startButton.pack()
 
-    window.after(0, lambda:redrawPixels(tau))
+    window.after(0, lambda:redrawPixels(foodTau,nestTau))
     window.mainloop()
     # tau.evaporate(0.05)
 
-def runSimThread(tau, ants):
-    t = threading.Thread(target=lambda:runSim(tau=tau, ants=ants))
+def runSimThread(foodTau, nestTau, ants):
+    t = threading.Thread(target=lambda:runSim(foodTau=foodTau, nestTau=nestTau, ants=ants))
     t.start()
 
-def runSim(tau, ants):
-    for i in range(100):
+def runSim(foodTau, nestTau, ants):
+    population = len(ants)
+    for i in range(25000):
         for ant in ants:
             antMap[ant.x][ant.y] -= 1
-            ant.move(tau)
-            tau.add(ant.x,ant.y,1/ant.cost)
+            ant.move(foodTau,nestTau)
+            if(ant.foundFood):
+                foodTau.add(ant.x,ant.y,(0.2/population)*ant.cost)
+            else:
+                nestTau.add(ant.x,ant.y,(0.2/population)*ant.cost)
             antMap[ant.x][ant.y] += 1
-        tau.evaporate(0.05)
-        if(i % 20 == 0):
-            redrawPixels(tau)
+        foodTau.evaporate(0.05)
+        nestTau.evaporate(0.05)
+        if(i % 10 == 0):
+            redrawPixels(foodTau,nestTau)
 
-def redrawPixels(tau):
+def redrawPixels(foodTau,nestTau):
     canvas.delete("all")
-    colourMap = [["#"] * 48 for i in range(48)]
+    colourMap = [["#"] * SIMWIDTH for i in range(SIMWIDTH)]
     highestPher = 0
-    pherMap = tau.all()
+    pherMap = foodTau.all()
     for row in pherMap:
         if(max(row)>highestPher):
             highestPher = max(row)
@@ -91,6 +107,21 @@ def redrawPixels(tau):
             if(len(r) == 1):
                 r = "0" + r
             colourMap[i][j] += r
+    highestPher2 = 0
+    pherMap2 = nestTau.all()
+    for row in pherMap2:
+        if(max(row)>highestPher2):
+            highestPher2 = max(row)
+    for i,row in enumerate(pherMap2):
+        for j,item in enumerate(row):
+            if(item>0):
+                val = (item/highestPher2)
+            else:
+                val = 0
+            g = str(hex(int(255*val))[2:])
+            if(len(g) == 1):
+                g = "0" + g
+            colourMap[i][j] += g
                 # colour = '#'+str(hex(int(255*val))[2:])+str(hex(int(1))[2:])+str(hex(int(1))[2:])
                 # canvas.create_rectangle(i*10,j*10,(i*10)+10,(j*10)+10,fill=colour,width=0)
     highestAnt = 0
@@ -103,13 +134,10 @@ def redrawPixels(tau):
                 val = (item/highestAnt)
             else:
                 val = 0
-            g = str(hex(int(255*val))[2:])
-            if(len(g) == 1):
-                g = "0" + g
             b = str(hex(int(255*val))[2:])
             if(len(b) == 1):
                 b = "0" + b
-            colourMap[i][j] += g + b
+            colourMap[i][j] += b
                 # colour = '#'+str(hex(int(255*val))[2:])+str(hex(int(255*val))[2:])+str(hex(int(1))[2:])
                 # canvas.create_rectangle(i*10,j*10,(i*10)+10,(j*10)+10,fill=colour,width=0)
     for i,row in enumerate(colourMap):
