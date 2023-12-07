@@ -172,6 +172,11 @@ class AntSim:
         r2 = math.sqrt(2)
         eta = deque([1,r2,2,2*r2,4,2*r2,2,r2])
         eta.rotate(self.lastMove)
+        # eta = list(eta)
+        for e in range(len(eta)):
+            if(e%2 != 0):
+                eta[e] = eta[e] * r2
+        # eta = [eta[e]*r2 for e in range(len(eta)) if e%2 == 0]
         newPosIndex = self.nextNode(tau,eta)
         cost = eta[newPosIndex]
         if(self.cost - cost > 0):

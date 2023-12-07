@@ -26,7 +26,7 @@ def mainSim() -> None:
     canvas = tk.Canvas(window, width=WIDTH, height=HEIGHT, bg="#000000")
     canvas.pack()
     global img
-    img = tk.PhotoImage(width=WIDTH, height=HEIGHT,file='doubleBridge.png')
+    img = tk.PhotoImage(width=WIDTH, height=HEIGHT,file='IMG_0069.png')
     # canvas.create_image((WIDTH/2, HEIGHT/2), image=img, state="normal")
 
     global antMap
@@ -50,8 +50,8 @@ def mainSim() -> None:
                 nestTau.set(i,j,-1)
 
     ants = []
-    spawn = [9,33]
-    for i in range(200):
+    spawn = [9,32]
+    for i in range(2000):
         ant = AntSim(spawn,1,2,SIMWIDTH)
         antMap[spawn[0]][spawn[1]] += 1
         ants.append(ant)
@@ -80,13 +80,13 @@ def runSim(foodTau, nestTau, ants):
             antMap[ant.x][ant.y] -= 1
             ant.move(foodTau,nestTau)
             if(ant.foundFood):
-                foodTau.add(ant.x,ant.y,(0.2/population)*ant.cost)
+                foodTau.add(ant.x,ant.y,(0.1/population))
             else:
-                nestTau.add(ant.x,ant.y,(0.2/population)*ant.cost)
+                nestTau.add(ant.x,ant.y,(0.1/population))
             antMap[ant.x][ant.y] += 1
-        foodTau.evaporate(0.05)
-        nestTau.evaporate(0.05)
-        if(i % 10 == 0):
+        foodTau.evaporate(0.25)
+        nestTau.evaporate(0.25)
+        if(i % 50 == 0):
             redrawPixels(foodTau,nestTau)
 
 def redrawPixels(foodTau,nestTau):
@@ -142,7 +142,8 @@ def redrawPixels(foodTau,nestTau):
                 # canvas.create_rectangle(i*10,j*10,(i*10)+10,(j*10)+10,fill=colour,width=0)
     for i,row in enumerate(colourMap):
         for j,item in enumerate(row):
-            canvas.create_rectangle(i*10,j*10,(i*10)+10,(j*10)+10,fill=item,width=0)
+            if item != '#000000':
+                canvas.create_rectangle(i*10,j*10,(i*10)+10,(j*10)+10,fill=item,width=0)
     # window.after(50,redrawPixels)
 
 def drawAnt(x,y,val):
