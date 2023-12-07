@@ -127,7 +127,7 @@ class AntSim:
         self.mapSize = 2*mapSize
     
     def probabilityIJ(self,tau,eta) -> float:
-        if(tau < 0):
+        if(tau < -0.1):
             return 0
         pheromoneProx = tau**self.alpha * eta**-self.beta
         return pheromoneProx

@@ -1,5 +1,6 @@
 import numpy as np
 import tkinter as tk
+import customtkinter as ctk
 import networkx as nx
 import time
 import threading
@@ -51,7 +52,7 @@ def mainSim() -> None:
 
     ants = []
     spawn = [9,32]
-    for i in range(2000):
+    for i in range(200):
         ant = AntSim(spawn,1,2,SIMWIDTH)
         antMap[spawn[0]][spawn[1]] += 1
         ants.append(ant)
@@ -67,7 +68,6 @@ def mainSim() -> None:
 
     window.after(0, lambda:redrawPixels(foodTau,nestTau))
     window.mainloop()
-    # tau.evaporate(0.05)
 
 def runSimThread(foodTau, nestTau, ants):
     t = threading.Thread(target=lambda:runSim(foodTau=foodTau, nestTau=nestTau, ants=ants))
@@ -75,17 +75,19 @@ def runSimThread(foodTau, nestTau, ants):
 
 def runSim(foodTau, nestTau, ants):
     population = len(ants)
-    for i in range(25000):
+    evaporation = 0.02
+    pheromone = 1
+    for i in range(5000):
         for ant in ants:
             antMap[ant.x][ant.y] -= 1
             ant.move(foodTau,nestTau)
             if(ant.foundFood):
-                foodTau.add(ant.x,ant.y,(0.1/population))
+                foodTau.add(ant.x,ant.y,(pheromone/population))
             else:
-                nestTau.add(ant.x,ant.y,(0.1/population))
+                nestTau.add(ant.x,ant.y,(pheromone/population))
             antMap[ant.x][ant.y] += 1
-        foodTau.evaporate(0.25)
-        nestTau.evaporate(0.25)
+        foodTau.evaporate(evaporation)
+        nestTau.evaporate(evaporation)
         if(i % 50 == 0):
             redrawPixels(foodTau,nestTau)
 
@@ -167,7 +169,7 @@ def draw_rectangle(x, y, color):
             pixel_data.extend((x + i, y + j, color))
     img.put(pixel_data)
 
-def main() -> None:
+def mainTSP() -> None:
     global window
     window = tk.Tk()
 
@@ -410,5 +412,126 @@ def progressBarLabel(data:float,string:str="") -> None:
     # Prints out the progress bar, ending in an escape character "\r" so that it keeps printing on the same line everytime
     progressLabel.config(text=string+"Training Progress: "+str(percent)+"% "+("█"*(percentOver4))+("▒"*(25-percentOver4)))
 
+class App(tk.Tk):
+    def __init__(self, screenName: str | None = None, baseName: str | None = None, className: str = "Tk", useTk: bool = True, sync: bool = False, use: str | None = None) -> None:
+        super().__init__(screenName, baseName, className, useTk, sync, use)
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        limitFrame = tk.Frame()
+
+        limitLabel = tk.Label(master=limitFrame, text="How many nodes: ", width=40)
+        limitLabel.pack(side=tk.LEFT)
+
+        limitEntry = tk.Entry(master=limitFrame, width=20)
+        limitEntry.insert(0,"20")
+        limitEntry.pack(side=tk.RIGHT)
+
+        limitFrame.pack()
+
+        antFrame = tk.Frame()
+
+        antLabel = tk.Label(master=antFrame, text="How many ants: ", width=40)
+        antLabel.pack(side=tk.LEFT)
+
+        antEntry = tk.Entry(master=antFrame, width=20)
+        antEntry.insert(0,"30")
+        antEntry.pack(side=tk.RIGHT)
+
+        antFrame.pack()
+
+        iterationFrame = tk.Frame()
+
+        iterationLabel = tk.Label(master=iterationFrame, text="How many iterations: ", width=40)
+        iterationLabel.pack(side=tk.LEFT)
+
+        iterationEntry = tk.Entry(master=iterationFrame, width=20)
+        iterationEntry.insert(0,"30")
+        iterationEntry.pack(side=tk.RIGHT)
+
+        iterationFrame.pack()
+
+        alphaFrame = tk.Frame()
+
+        alphaLabel = tk.Label(master=alphaFrame, text="Value of pheromone impact: ", width=40)
+        alphaLabel.pack(side=tk.LEFT)
+
+        alphaScale = tk.Scale(master=alphaFrame, from_=0, to=2, resolution=0.1, orient=tk.HORIZONTAL, tickinterval=1, width=20)
+        alphaScale.set(1)
+        alphaScale.pack(side=tk.RIGHT)
+
+        alphaFrame.pack()
+
+        betaFrame = tk.Frame()
+
+        betaLabel = tk.Label(master=betaFrame, text="Value of proximity impact: ", width=40)
+        betaLabel.pack(side=tk.LEFT)
+
+        betaScale = tk.Scale(master=betaFrame, from_=0, to=4, resolution=0.1, orient=tk.HORIZONTAL, tickinterval=1, width=20)
+        betaScale.set(2)
+        betaScale.pack(side=tk.RIGHT)
+
+        betaFrame.pack()
+
+        evapFrame = tk.Frame()
+
+        evapLabel = tk.Label(master=evapFrame, text="Evaporation Coefficient: ", width=40)
+        evapLabel.pack(side=tk.LEFT)
+
+        evapScale = tk.Scale(master=evapFrame, from_=0, to=1, resolution=0.05, orient=tk.HORIZONTAL, width=20)
+        evapScale.set(0.1)
+        evapScale.pack(side=tk.RIGHT)
+
+        evapFrame.pack()
+
+        startButton = tk.Button(
+            text="Run Sim", 
+            width=25, 
+            command=lambda:runThread(
+                float(alphaScale.get()),
+                float(betaScale.get()),
+                float(evapScale.get()),
+                1,
+                int(limitEntry.get()),
+                int(antEntry.get()),
+                int(iterationEntry.get())
+            )
+        )
+        startButton.pack()
+
+        progressFrame = tk.Frame()
+
+        global progressLabel
+        progressLabel = tk.Label(master=progressFrame, text="", width=60)
+        progressLabel.pack(side=tk.LEFT)
+
+        progressFrame.pack()
+
+        global fig
+        fig = Figure(figsize = (5, 5), dpi = 100) 
+    
+        global canvas
+        canvas = FigureCanvasTkAgg(fig, 
+                                master = self)   
+        canvas.draw() 
+
+        canvas.get_tk_widget().pack() 
+    
+        global graph
+        graph = nx.Graph()
+
+        self.after(0, self.redrawGraph)
+
+    def redrawGraph(self): 
+        fig.clf()
+        plot1 = fig.add_subplot(111)
+
+        pos = {node: coords for node, coords in nx.get_node_attributes(graph, "pos").items()}
+        nx.draw(graph, pos, with_labels=False, node_size=50, node_color="#4169E1", ax=plot1)
+        canvas.draw()
+        self.after(100,self.redrawGraph)
+
 if __name__ == "__main__":
-    mainSim()
+    app = App()
+    app.mainloop()
