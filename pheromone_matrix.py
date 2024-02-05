@@ -59,3 +59,14 @@ class PMat:
             for j,num in enumerate(row):
                 if([i,j] not in self.persist and num > -0.1):
                     self.content[i][j] = (num * (1-val))
+
+    def highest(self) -> float:
+        '''
+            Returns the highest value in the matrix, used for display scaling
+        '''
+        best = 0
+        for i,row in enumerate(self.content):
+            for j,item in enumerate(row):
+                if item > best and [i,j] not in self.persist:
+                    best = item
+        return best

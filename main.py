@@ -5,19 +5,21 @@ import networkx as nx
 import time
 import threading
 import math
-import csv
 
 from matplotlib.figure import Figure 
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,  
 NavigationToolbar2Tk) 
 
+from tkinter import filedialog
+
 from ant import Ant,AntSim
 from distance_matrix import Mat
 from pheromone_matrix import PMat
+from file_loader import loadCSV
 
 def mainSim() -> None:
 
-    WIDTH, HEIGHT = 640, 640
+    WIDTH, HEIGHT = 320, 320
     global SIMWIDTH
     SIMWIDTH = 64
 
@@ -51,31 +53,72 @@ def mainSim() -> None:
                 nestTau.set(i,j,-1)
 
     ants = []
-    spawn = [9,32]
-    for i in range(200):
+    spawn = nestTau.persist[0]
+    for i in range(1000):
         ant = AntSim(spawn,1,2,SIMWIDTH)
         antMap[spawn[0]][spawn[1]] += 1
         ants.append(ant)
 
-    # runSimThread(tau=tau)
+    alphaFrame = tk.Frame()
+
+    alphaLabel = tk.Label(master=alphaFrame, text="Value of pheromone impact: ", width=40)
+    alphaLabel.pack(side=tk.LEFT)
+
+    alphaScale = tk.Scale(master=alphaFrame, from_=0, to=2, resolution=0.1, orient=tk.HORIZONTAL, tickinterval=1, width=20)
+    alphaScale.set(1)
+    alphaScale.pack(side=tk.RIGHT)
+
+    alphaFrame.pack()
+
+    betaFrame = tk.Frame()
+
+    betaLabel = tk.Label(master=betaFrame, text="Value of proximity impact: ", width=40)
+    betaLabel.pack(side=tk.LEFT)
+
+    betaScale = tk.Scale(master=betaFrame, from_=0, to=4, resolution=0.1, orient=tk.HORIZONTAL, tickinterval=1, width=20)
+    betaScale.set(2)
+    betaScale.pack(side=tk.RIGHT)
+
+    betaFrame.pack()
+
+    evapFrame = tk.Frame()
+
+    evapLabel = tk.Label(master=evapFrame, text="Evaporation Coefficient: ", width=40)
+    evapLabel.pack(side=tk.LEFT)
+
+    evapScale = tk.Scale(master=evapFrame, from_=0, to=0.5, resolution=0.01, orient=tk.HORIZONTAL, width=20)
+    evapScale.set(0.1)
+    evapScale.pack(side=tk.RIGHT)
+
+    evapFrame.pack()
 
     startButton = tk.Button(
         text="Run Sim", 
         width=25, 
-        command=lambda:runSimThread(foodTau=foodTau,nestTau=nestTau, ants=ants)
+        command=lambda:runSimThread(
+            foodTau=foodTau,
+            nestTau=nestTau,
+            ants=ants,
+            alpha=float(alphaScale.get()),
+            beta=float(betaScale.get()),
+            evap=float(evapScale.get())
+        )
     )
     startButton.pack()
 
     window.after(0, lambda:redrawPixels(foodTau,nestTau))
     window.mainloop()
 
-def runSimThread(foodTau, nestTau, ants):
-    t = threading.Thread(target=lambda:runSim(foodTau=foodTau, nestTau=nestTau, ants=ants))
+def runSimThread(foodTau, nestTau, ants, alpha, beta, evap):
+    for ant in ants:
+        ant.alpha = alpha
+        ant.beta = beta
+    t = threading.Thread(target=lambda:runSim(foodTau=foodTau, nestTau=nestTau, ants=ants, evaporation=evap))
     t.start()
 
-def runSim(foodTau, nestTau, ants):
+def runSim(foodTau, nestTau, ants, evaporation):
     population = len(ants)
-    evaporation = 0.02
+    # evaporation = 0.02
     pheromone = 1
     for i in range(5000):
         for ant in ants:
@@ -94,14 +137,11 @@ def runSim(foodTau, nestTau, ants):
 def redrawPixels(foodTau,nestTau):
     canvas.delete("all")
     colourMap = [["#"] * SIMWIDTH for i in range(SIMWIDTH)]
-    highestPher = 0
+    highestPher = foodTau.highest()
     pherMap = foodTau.all()
-    for row in pherMap:
-        if(max(row)>highestPher):
-            highestPher = max(row)
     for i,row in enumerate(pherMap):
         for j,item in enumerate(row):
-            if(item>0):
+            if(item>0 and [i,j] not in foodTau.persist):
                 val = (item/highestPher)
             else:
                 val = 0
@@ -109,14 +149,11 @@ def redrawPixels(foodTau,nestTau):
             if(len(r) == 1):
                 r = "0" + r
             colourMap[i][j] += r
-    highestPher2 = 0
+    highestPher2 = nestTau.highest()
     pherMap2 = nestTau.all()
-    for row in pherMap2:
-        if(max(row)>highestPher2):
-            highestPher2 = max(row)
     for i,row in enumerate(pherMap2):
         for j,item in enumerate(row):
-            if(item>0):
+            if(item>0 and [i,j] not in nestTau.persist):
                 val = (item/highestPher2)
             else:
                 val = 0
@@ -145,7 +182,7 @@ def redrawPixels(foodTau,nestTau):
     for i,row in enumerate(colourMap):
         for j,item in enumerate(row):
             if item != '#000000':
-                canvas.create_rectangle(i*10,j*10,(i*10)+10,(j*10)+10,fill=item,width=0)
+                canvas.create_rectangle(i*5,j*5,(i*5)+5,(j*5)+5,fill=item,width=0)
     # window.after(50,redrawPixels)
 
 def drawAnt(x,y,val):
@@ -346,48 +383,6 @@ def runTSP(α,β,evaporationCoeff,q,limit,antCount,iterations) -> None:
     # print("Time per ant: "+str(totalTime/(iterations*antCount)))
     updateGraph(bestRoute,coords=coords)
 
-def loadCSV(filename:str,index1:int,index2:int,header:bool,limit:int) -> list[list[float]]:
-    '''
-        Forms a list of vertex coordinates from the csv contents of a file
-        filename: a string representing the name of the data
-        index1: a int representing the csv index of the first datum, can represent latitude, x etc.
-        index2: a int representing the csv index of the second datum, can represent longitude, y etc.
-        header: a boolean of whether or not the file has a header row
-        limit: an int that will limit the number of rows loaded from the csv, higher than the length of file will be ignored
-    '''
-    # Empty list of vertex coordinates
-    coords = []
-    # CSV file reference
-    csvFile = open(filename)
-    # CSV reader object
-    csvReader = csv.reader(csvFile)
-    
-    # Iterate while there is a next row in the file with row as the reference
-    for row in csvReader:
-        # If the current line of the csv reader is higher than the limit then stop loading file and return
-        if(csvReader.line_num>limit):
-            break
-        # If there is no header row or the current line of the csv reader is not 1
-        if((not header) or (csvReader.line_num != 1)):
-            # Add the indexed items from the current row to the list of coordinates
-            coords.append([float(row[index1]),float(row[index2])])
-    
-    return coords
-
-def loadTSP(filename:str,limit:int) -> list[list[float]]:
-    # Empty list of vertex coordinates
-    coords = []
-    # TSP file reference
-    tspFile = open(filename)
-    
-    for row in tspFile:
-        nums = row.split()
-        coords.append([int(nums[0]),int(nums[1])])
-
-    tspFile.close()
-
-    return coords
-
 def progressBar(data:float,string:str="") -> None:
     '''
         data: float between 0-1
@@ -418,7 +413,18 @@ class App(tk.Tk):
 
         self.create_widgets()
 
+        self.after(0, self.redrawGraph)
+
+    def open_file_browser(self):
+        fileName = filedialog.askopenfilename(initialdir="./",title="Select a File")#, filetypes=(("all files", "*.*")))
+
     def create_widgets(self):
+        menuBar = tk.Menu(self)
+        fileMenu = tk.Menu(menuBar, tearoff=0)
+        fileMenu.add_command(label="Open", command=self.open_file_browser)
+        menuBar.add_cascade(label="File", menu=fileMenu)
+        self.config(menu=menuBar)
+
         limitFrame = tk.Frame()
 
         limitLabel = tk.Label(master=limitFrame, text="How many nodes: ", width=40)
@@ -488,7 +494,7 @@ class App(tk.Tk):
         startButton = tk.Button(
             text="Run Sim", 
             width=25, 
-            command=lambda:runThread(
+            command=lambda:self.runThread(
                 float(alphaScale.get()),
                 float(betaScale.get()),
                 float(evapScale.get()),
@@ -508,30 +514,86 @@ class App(tk.Tk):
 
         progressFrame.pack()
 
-        global fig
-        fig = Figure(figsize = (5, 5), dpi = 100) 
+        self.fig = Figure(figsize = (4, 4), dpi = 100) 
     
-        global canvas
-        canvas = FigureCanvasTkAgg(fig, 
+        # global canvas
+        self.canvas = FigureCanvasTkAgg(self.fig, 
                                 master = self)   
-        canvas.draw() 
+        self.canvas.draw() 
 
-        canvas.get_tk_widget().pack() 
+        self.canvas.get_tk_widget().pack() 
     
-        global graph
-        graph = nx.Graph()
-
-        self.after(0, self.redrawGraph)
+        # global graph
+        self.graph = nx.Graph()
 
     def redrawGraph(self): 
-        fig.clf()
-        plot1 = fig.add_subplot(111)
+        self.fig.clf()
+        plot1 = self.fig.add_subplot(111)
 
-        pos = {node: coords for node, coords in nx.get_node_attributes(graph, "pos").items()}
-        nx.draw(graph, pos, with_labels=False, node_size=50, node_color="#4169E1", ax=plot1)
-        canvas.draw()
+        pos = {node: coords for node, coords in nx.get_node_attributes(self.graph, "pos").items()}
+        nx.draw(self.graph, pos, with_labels=False, node_size=50, node_color="#4169E1", ax=plot1)
+        self.canvas.draw()
         self.after(100,self.redrawGraph)
+
+    def runThread(self,alphaScale,betaScale,evapScale,q,limitEntry,antEntry,iterationEntry):
+        t = threading.Thread(target=lambda:self.runTSP(
+            float(alphaScale),
+            float(betaScale),
+            float(evapScale),
+            q,
+            int(limitEntry),
+            int(antEntry),
+            int(iterationEntry)
+        ))
+        t.start()
+
+    def updateGraph(self,route, coords):
+        self.graph.clear()
+        for r in range(len(route)-1):
+            node = route[r]
+            self.graph.add_node(node,pos=(coords[node][1], coords[node][0]))
+            self.graph.add_edge(node, route[r+1])
+
+    def runTSP(self,α,β,evaporationCoeff,q,limit,antCount,iterations) -> None:
+        # limit = int(input("Enter row limit for data: "))
+        coords = loadCSV("gb.csv",1,2,True,limit=limit)
+        # coords = loadTSP("datasets_tsp_att48_xy.txt",limit=limit)
+        distMat = Mat(len(coords),β)
+        distMat.formDistMat(coords,"haversine")
+        tau  = np.ones(distMat.shape)
+        # Python version of infinitely high cost
+        bestCost = float("inf")
+        bestRoute = []
+        ants = []
+        startTime = time.time()
+        for i in range(iterations):
+            ants = []
+            tauChange = np.zeros(distMat.shape)
+            for a in range(antCount):
+                ants.append(Ant(nodes=list(range(distMat.size)),alpha=α,beta=β))
+            for a, ant in enumerate(ants):
+                ant.move(tau,distMat)
+                if(ant.cost < bestCost):
+                    bestCost = ant.cost
+                    bestRoute = ant.route
+                    self.updateGraph(bestRoute,coords=coords)
+                for r in range(len(ant.route)-1):
+                    tauChange[ant.route[r]][ant.route[r+1]] += q / ant.cost
+                tau += tauChange / antCount
+                tauChange = np.zeros(distMat.shape)
+                # progressBar((i/iterations)+((a/(len(ants))/iterations)))
+                progressBarLabel((i/iterations)+((a/(len(ants))/iterations)))
+            tau *= (1-evaporationCoeff)
+            
+        endTime = time.time()
+        totalTime = endTime - startTime
+        # print("Best Route: "+str(bestRoute))
+        # print("Cost of: "+str(bestCost))
+        # print("Time taken: "+str(totalTime))
+        # print("Time per ant: "+str(totalTime/(iterations*antCount)))
+        self.updateGraph(bestRoute,coords=coords)
 
 if __name__ == "__main__":
     app = App()
     app.mainloop()
+    # mainSim()
