@@ -15,7 +15,7 @@ from tkinter import filedialog
 from ant import Ant,AntSim
 from distance_matrix import Mat
 from pheromone_matrix import PMat
-from file_loader import loadCSV
+from file_loader import Loader
 
 def mainSim() -> None:
 
@@ -411,12 +411,16 @@ class App(tk.Tk):
     def __init__(self, screenName: str | None = None, baseName: str | None = None, className: str = "Tk", useTk: bool = True, sync: bool = False, use: str | None = None) -> None:
         super().__init__(screenName, baseName, className, useTk, sync, use)
 
+        self.coords = []
+        self.loader = Loader()
+
         self.create_widgets()
 
         self.after(0, self.redrawGraph)
 
     def open_file_browser(self):
-        fileName = filedialog.askopenfilename(initialdir="./",title="Select a File")#, filetypes=(("all files", "*.*")))
+        filepath = filedialog.askopenfilename(initialdir="./",title="Select a File")#, filetypes=(("all files", "*.*")))
+        self.coords = self.loader.loadFile(filepath=filepath)
 
     def create_widgets(self):
         menuBar = tk.Menu(self)
@@ -556,10 +560,12 @@ class App(tk.Tk):
 
     def runTSP(self,α,β,evaporationCoeff,q,limit,antCount,iterations) -> None:
         # limit = int(input("Enter row limit for data: "))
-        coords = loadCSV("gb.csv",1,2,True,limit=limit)
+        # coords = loadCSV("gb.csv",limit=limit)
         # coords = loadTSP("datasets_tsp_att48_xy.txt",limit=limit)
-        distMat = Mat(len(coords),β)
-        distMat.formDistMat(coords,"haversine")
+        if(self.coords == []):
+            return
+        distMat = Mat(len(self.coords),β)
+        distMat.formDistMat(self.coords,"haversine")
         tau  = np.ones(distMat.shape)
         # Python version of infinitely high cost
         bestCost = float("inf")
@@ -576,7 +582,7 @@ class App(tk.Tk):
                 if(ant.cost < bestCost):
                     bestCost = ant.cost
                     bestRoute = ant.route
-                    self.updateGraph(bestRoute,coords=coords)
+                    self.updateGraph(bestRoute,coords=self.coords)
                 for r in range(len(ant.route)-1):
                     tauChange[ant.route[r]][ant.route[r+1]] += q / ant.cost
                 tau += tauChange / antCount
@@ -591,7 +597,7 @@ class App(tk.Tk):
         # print("Cost of: "+str(bestCost))
         # print("Time taken: "+str(totalTime))
         # print("Time per ant: "+str(totalTime/(iterations*antCount)))
-        self.updateGraph(bestRoute,coords=coords)
+        self.updateGraph(bestRoute,coords=self.coords)
 
 if __name__ == "__main__":
     app = App()
