@@ -9,7 +9,7 @@ class Mat:
     shape: list[int]
     beta: float
 
-    def __init__(self, size:int, beta:float) -> None:
+    def __init__(self, size:int) -> None:
         self.content = [[0] * size for i in range(size)]
         self.size = size
         self.shape = [size,size]

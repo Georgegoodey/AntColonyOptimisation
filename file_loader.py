@@ -56,7 +56,6 @@ def loadCSV(filename:str) -> list[list[float]]:
 
     return coords
 
-
 def loadTXT(filename:str) -> list[list[float]]:
     # Empty list of vertex coordinates
     coords = []
@@ -75,7 +74,7 @@ def loadTSP(filename:str):
     with open(filename, 'r') as tspFile:
         lines = tspFile.readlines()
     
-    dimension = int([line.split()[1] for line in lines if line.startswith("DIMENSION")][0])
+    dimension = int([line.split(":")[1] for line in lines if line.startswith("DIMENSION")][0])
     coord_section_index = lines.index("NODE_COORD_SECTION\n") + 1
 
     coords = []
