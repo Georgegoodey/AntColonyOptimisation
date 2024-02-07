@@ -25,11 +25,9 @@ class TSP:
             if(ant.cost < self.bestCost):
                 self.bestCost = ant.cost
                 self.bestRoute = ant.route
-                # self.app.updateGraph(bestRoute,coords=self.app.coords)
             for r in range(len(ant.route)-1):
                 tauChange[ant.route[r]][ant.route[r+1]] += q / ant.cost
             self.tau += tauChange / antCount
             tauChange = np.zeros(self.distMat.shape)
-            # progressBarLabel((i/iterations)+((a/(len(ants))/iterations)))
         self.tau *= (1-evaporationCoeff)
         return self.bestRoute

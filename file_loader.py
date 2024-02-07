@@ -6,7 +6,7 @@ class Loader:
     coords: list[tuple[float,float]]
 
     def __init__(self) -> None:
-        coords = []
+        self.coords = []
 
     def loadFile(self, filepath:str) -> None:
         filetype = os.path.splitext(filepath)[1][1:]

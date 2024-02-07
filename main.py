@@ -245,7 +245,8 @@ class App(tk.Tk):
     def open_file_browser(self):
         filepath = filedialog.askopenfilename(initialdir="./",title="Select a File")#, filetypes=(("all files", "*.*")))
         self.coords = self.loader.loadFile(filepath=filepath)
-        self.tsp = TSP(self.coords)
+        if(self.coords):
+            self.tsp = TSP(self.coords)
 
     def create_widgets(self):
         menuBar = tk.Menu(self)
@@ -254,84 +255,22 @@ class App(tk.Tk):
         menuBar.add_cascade(label="File", menu=fileMenu)
         self.config(menu=menuBar)
 
-        limitFrame = tk.Frame()
+        limit = FrameObject(type="entry",text="How many nodes: ",val="20")
 
-        limitLabel = tk.Label(master=limitFrame, text="How many nodes: ", width=40)
-        limitLabel.pack(side=tk.LEFT)
+        count = FrameObject(type="entry",text="How many ants: ",val="30")
 
-        limitEntry = tk.Entry(master=limitFrame, width=20)
-        limitEntry.insert(0,"20")
-        limitEntry.pack(side=tk.RIGHT)
+        iterations = FrameObject(type="entry",text="How many iterations: ",val="30")
 
-        limitFrame.pack()
+        alpha = FrameObject(type="scale",text="Value of pheromone impact: ",val=1,size=(0,2),resolution=0.1)
 
-        antFrame = tk.Frame()
+        beta = FrameObject(type="scale",text="Value of proximity impact: ",val=2,size=(0,4),resolution=0.1)
 
-        antLabel = tk.Label(master=antFrame, text="How many ants: ", width=40)
-        antLabel.pack(side=tk.LEFT)
-
-        antEntry = tk.Entry(master=antFrame, width=20)
-        antEntry.insert(0,"30")
-        antEntry.pack(side=tk.RIGHT)
-
-        antFrame.pack()
-
-        iterationFrame = tk.Frame()
-
-        iterationLabel = tk.Label(master=iterationFrame, text="How many iterations: ", width=40)
-        iterationLabel.pack(side=tk.LEFT)
-
-        iterationEntry = tk.Entry(master=iterationFrame, width=20)
-        iterationEntry.insert(0,"30")
-        iterationEntry.pack(side=tk.RIGHT)
-
-        iterationFrame.pack()
-
-        alphaFrame = tk.Frame()
-
-        alphaLabel = tk.Label(master=alphaFrame, text="Value of pheromone impact: ", width=40)
-        alphaLabel.pack(side=tk.LEFT)
-
-        alphaScale = tk.Scale(master=alphaFrame, from_=0, to=2, resolution=0.1, orient=tk.HORIZONTAL, tickinterval=1, width=20)
-        alphaScale.set(1)
-        alphaScale.pack(side=tk.RIGHT)
-
-        alphaFrame.pack()
-
-        betaFrame = tk.Frame()
-
-        betaLabel = tk.Label(master=betaFrame, text="Value of proximity impact: ", width=40)
-        betaLabel.pack(side=tk.LEFT)
-
-        betaScale = tk.Scale(master=betaFrame, from_=0, to=4, resolution=0.1, orient=tk.HORIZONTAL, tickinterval=1, width=20)
-        betaScale.set(2)
-        betaScale.pack(side=tk.RIGHT)
-
-        betaFrame.pack()
-
-        evapFrame = tk.Frame()
-
-        evapLabel = tk.Label(master=evapFrame, text="Evaporation Coefficient: ", width=40)
-        evapLabel.pack(side=tk.LEFT)
-
-        evapScale = tk.Scale(master=evapFrame, from_=0, to=1, resolution=0.05, orient=tk.HORIZONTAL, width=20)
-        evapScale.set(0.1)
-        evapScale.pack(side=tk.RIGHT)
-
-        evapFrame.pack()
+        evap = FrameObject(type="scale",text="Evaporation Coefficient: ",val=0.1,size=(0,1),resolution=0.05)
 
         startButton = tk.Button(
             text="Run Sim", 
             width=25, 
-            command=lambda:self.runThread(
-                float(alphaScale.get()),
-                float(betaScale.get()),
-                float(evapScale.get()),
-                1,
-                int(limitEntry.get()),
-                int(antEntry.get()),
-                int(iterationEntry.get())
-            )
+            command=lambda:self.runThread(alpha.get(),beta.get(),evap.get(),1,limit.get(),int(count.get()),int(iterations.get()))
         )
         startButton.pack()
 
@@ -353,28 +292,11 @@ class App(tk.Tk):
 
         self.graph = nx.Graph()
 
-    def redrawGraph(self): 
-        self.fig.clf()
-        plot1 = self.fig.add_subplot(111)
-
-        pos = {node: coords for node, coords in nx.get_node_attributes(self.graph, "pos").items()}
-        nx.draw(self.graph, pos, with_labels=False, node_size=50, node_color="#4169E1", ax=plot1)
-        self.canvas.draw()
-        self.after(100,self.redrawGraph)
-
-    def runThread(self,alphaScale,betaScale,evapScale,q,limitEntry,antEntry,iterationEntry):
-        t = threading.Thread(target=lambda:self.runTSP(
-            float(alphaScale),
-            float(betaScale),
-            float(evapScale),
-            q,
-            int(limitEntry),
-            int(antEntry),
-            int(iterationEntry)
-        ))
+    def runThread(self,alpha,beta,evap,q,count,iterations):
+        t = threading.Thread(target=lambda:self.runTSP(alpha,beta,evap,q,count,iterations))
         t.start()
 
-    def runTSP(self,α,β,evaporationCoeff,q,limit,antCount,iterations) -> None:
+    def runTSP(self,α,β,evaporationCoeff,q,antCount,iterations) -> None:
         if(self.coords == []):
             return
         for i in range(iterations):
@@ -389,6 +311,40 @@ class App(tk.Tk):
             node = route[r]
             self.graph.add_node(node,pos=(coords[node][1], coords[node][0]))
             self.graph.add_edge(node, route[r+1])
+
+    def redrawGraph(self): 
+        self.fig.clf()
+        plot1 = self.fig.add_subplot(111)
+
+        pos = {node: coords for node, coords in nx.get_node_attributes(self.graph, "pos").items()}
+        nx.draw(self.graph, pos, with_labels=False, node_size=50, node_color="#4169E1", ax=plot1)
+        self.canvas.draw()
+        self.after(100,self.redrawGraph)
+
+class FrameObject:
+
+    frame: tk.Frame
+    label: tk.Label
+
+    def __init__(self, type, text="", val=0, size=None, resolution=None):
+        self.frame = tk.Frame()
+
+        self.label = tk.Label(master=self.frame, text=text, width=40)
+        self.label.pack(side=tk.LEFT)
+
+        if(type == "entry"):
+            self.val = tk.Entry(master=self.frame, width=20)
+            self.val.insert(0,val)
+            self.val.pack(side=tk.RIGHT)
+        elif(type == "scale"):
+            self.val = tk.Scale(master=self.frame, from_=size[0], to=size[1], resolution=resolution, orient=tk.HORIZONTAL, tickinterval=1, width=20)
+            self.val.set(val)
+            self.val.pack(side=tk.RIGHT)
+
+        self.frame.pack()
+
+    def get(self):
+        return float(self.val.get())
 
 if __name__ == "__main__":
     app = App()
