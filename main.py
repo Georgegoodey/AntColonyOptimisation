@@ -270,9 +270,16 @@ class App(tk.Tk):
         startButton = tk.Button(
             text="Run Sim", 
             width=25, 
-            command=lambda:self.runThread(alpha.get(),beta.get(),evap.get(),1,limit.get(),int(count.get()),int(iterations.get()))
+            command=lambda:self.runThread(alpha.get(),beta.get(),evap.get(),1,int(count.get()),int(iterations.get()))
         )
         startButton.pack()
+
+        solverButton = tk.Button(
+            text="Run Solver", 
+            width=25, 
+            command=lambda:self.runSolver()
+        )
+        solverButton.pack()
 
         progressFrame = tk.Frame()
 
@@ -291,6 +298,8 @@ class App(tk.Tk):
         self.canvas.get_tk_widget().pack() 
 
         self.graph = nx.Graph()
+
+        self.solverGraph = nx.Graph()
 
     def runThread(self,alpha,beta,evap,q,count,iterations):
         t = threading.Thread(target=lambda:self.runTSP(alpha,beta,evap,q,count,iterations))
@@ -318,8 +327,21 @@ class App(tk.Tk):
 
         pos = {node: coords for node, coords in nx.get_node_attributes(self.graph, "pos").items()}
         nx.draw(self.graph, pos, with_labels=False, node_size=50, node_color="#4169E1", ax=plot1)
+        pos = {node: coords for node, coords in nx.get_node_attributes(self.solverGraph, "pos").items()}
+        nx.draw(self.solverGraph, pos, with_labels=False, node_size=50, node_color="#CC5500", ax=plot1)
         self.canvas.draw()
         self.after(100,self.redrawGraph)
+
+    def runSolver(self) -> None:
+        bestRoute,cost = self.tsp.useSolver()
+        self.updateSolverGraph(bestRoute)
+
+    def updateSolverGraph(self,route):
+        self.solverGraph.clear()
+        for r in range(len(route)-1):
+            node = route[r]
+            self.solverGraph.add_node(node,pos=(self.coords[node][1], self.coords[node][0]))
+            self.solverGraph.add_edge(node, route[r+1])
 
 class FrameObject:
 

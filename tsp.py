@@ -1,5 +1,8 @@
 import numpy as np
 
+from python_tsp.heuristics import solve_tsp_simulated_annealing
+
+
 from ant import Ant,AntSim
 from distance_matrix import Mat
 from pheromone_matrix import PMat
@@ -31,3 +34,8 @@ class TSP:
             tauChange = np.zeros(self.distMat.shape)
         self.tau *= (1-evaporationCoeff)
         return self.bestRoute
+
+    def useSolver(self):
+        route,distance = solve_tsp_simulated_annealing(np.array(self.distMat.all()))
+        route.append(route[0])
+        return route,distance

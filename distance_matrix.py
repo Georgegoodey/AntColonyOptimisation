@@ -1,4 +1,5 @@
 from math import pi,sin,cos,atan2,sqrt
+# import numpy as np
 
 class Mat:
 
@@ -11,6 +12,7 @@ class Mat:
 
     def __init__(self, size:int) -> None:
         self.content = [[0] * size for i in range(size)]
+        # self.content = np.array((size,size))
         self.size = size
         self.shape = [size,size]
         # self.beta = beta
@@ -28,6 +30,12 @@ class Mat:
         '''
         return self.content[i][j]
     
+    def all(self) -> list[list[float]]:
+        '''
+            Returns entire distance matrix
+        '''
+        return self.content
+
     def getProx(self,i:int,j:int) ->  float:
         '''
             Returns the proximity of the value at i,j rather than the distance
