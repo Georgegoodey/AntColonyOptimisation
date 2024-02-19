@@ -224,19 +224,12 @@ class App(tk.Tk):
     def __init__(self,screenName:str|None=None,baseName:str|None=None,className:str="Tk",useTk:bool=True,sync:bool=False,use:str|None=None) -> None:
         super().__init__(screenName, baseName, className, useTk, sync, use)
 
-        # self.coords = []
-        # self.loader = Loader()
-
         # self.attributes('-fullscreen', True)
         # self.state('zoomed') 
-
-        # self.create_widgets()
 
         self.fs = False
         self.bind("<F11>", self.toggle_fullscreen)
         self.bind("<Escape>", self.end_fullscreen)
-
-        # self.after(0, self.redrawGraph)
 
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand=True)
@@ -268,107 +261,6 @@ class App(tk.Tk):
     def end_fullscreen(self,event=None):
         self.fs = False
         self.attributes("-fullscreen", False)
-
-    # def open_file_browser(self):
-    #     filepath = filedialog.askopenfilename(initialdir="./",title="Select a File")#, filetypes=(("all files", "*.*")))
-    #     self.coords = self.loader.loadFile(filepath=filepath)
-    #     if(self.coords):
-    #         self.tsp = TSP(self.coords)
-
-    # def create_widgets(self):
-    #     menuBar = tk.Menu(self)
-    #     fileMenu = tk.Menu(menuBar, tearoff=0)
-    #     fileMenu.add_command(label="Open", command=self.open_file_browser)
-    #     menuBar.add_cascade(label="File", menu=fileMenu)
-    #     self.config(menu=menuBar)
-
-    #     limit = FrameObject(type="entry",text="How many nodes: ",val="20")
-
-    #     count = FrameObject(type="entry",text="How many ants: ",val="30")
-
-    #     iterations = FrameObject(type="entry",text="How many iterations: ",val="30")
-
-    #     alpha = FrameObject(type="scale",text="Value of pheromone impact: ",val=1,size=(0,2),resolution=0.1)
-
-    #     beta = FrameObject(type="scale",text="Value of proximity impact: ",val=2,size=(0,4),resolution=0.1)
-
-    #     evap = FrameObject(type="scale",text="Evaporation Coefficient: ",val=0.1,size=(0,1),resolution=0.05)
-
-    #     startButton = tk.Button(
-    #         text="Run Sim", 
-    #         width=25, 
-    #         command=lambda:self.runThread(alpha.get(),beta.get(),evap.get(),1,int(count.get()),int(iterations.get()))
-    #     )
-    #     startButton.pack()
-
-    #     solverButton = tk.Button(
-    #         text="Run Solver", 
-    #         width=25, 
-    #         command=lambda:self.runSolver()
-    #     )
-    #     solverButton.pack()
-
-    #     progressFrame = tk.Frame()
-
-    #     global progressLabel
-    #     progressLabel = tk.Label(master=progressFrame, text="", width=60)
-    #     progressLabel.pack(side=tk.LEFT)
-
-    #     progressFrame.pack()
-
-    #     self.fig = Figure(figsize = (4, 4), dpi = 100) 
-
-    #     self.canvas = FigureCanvasTkAgg(self.fig, 
-    #                             master = self)   
-    #     self.canvas.draw() 
-
-    #     self.canvas.get_tk_widget().pack() 
-
-    #     self.graph = nx.Graph()
-
-    #     self.solverGraph = nx.Graph()
-
-    # def runThread(self,alpha,beta,evap,q,count,iterations):
-    #     t = threading.Thread(target=lambda:self.runTSP(alpha,beta,evap,q,count,iterations))
-    #     t.start()
-
-    # def runTSP(self,α,β,evaporationCoeff,q,antCount,iterations) -> None:
-    #     if(self.coords == []):
-    #         return
-    #     for i in range(iterations):
-    #         bestRoute = self.tsp.iterate(α,β,evaporationCoeff,q,antCount)
-    #         self.updateGraph(bestRoute,coords=self.coords)
-    #         progressBarLabel((i/iterations))
-    #     self.updateGraph(bestRoute,coords=self.coords)
-
-    # def updateGraph(self,route, coords):
-    #     self.graph.clear()
-    #     for r in range(len(route)-1):
-    #         node = route[r]
-    #         self.graph.add_node(node,pos=(coords[node][1], coords[node][0]))
-    #         self.graph.add_edge(node, route[r+1])
-
-    # def redrawGraph(self): 
-    #     self.fig.clf()
-    #     plot1 = self.fig.add_subplot(111)
-
-    #     pos = {node: coords for node, coords in nx.get_node_attributes(self.graph, "pos").items()}
-    #     nx.draw(self.graph, pos, with_labels=False, node_size=50, node_color="#4169E1", ax=plot1)
-    #     pos = {node: coords for node, coords in nx.get_node_attributes(self.solverGraph, "pos").items()}
-    #     nx.draw(self.solverGraph, pos, with_labels=False, node_size=50, edge_color="#CC5500", ax=plot1)
-    #     self.canvas.draw()
-    #     self.after(100,self.redrawGraph)
-
-    # def runSolver(self) -> None:
-    #     bestRoute,cost = self.tsp.useSolver()
-    #     self.updateSolverGraph(bestRoute)
-
-    # def updateSolverGraph(self,route):
-    #     self.solverGraph.clear()
-    #     for r in range(len(route)-1):
-    #         node = route[r]
-    #         self.solverGraph.add_node(node,pos=(self.coords[node][1], self.coords[node][0]))
-    #         self.solverGraph.add_edge(node, route[r+1])
 
 if __name__ == "__main__":
     app = App()

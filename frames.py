@@ -62,11 +62,6 @@ class TSPFrame(tk.Frame):
         return menuBar
 
     def createWidgets(self):
-        # menuBar = tk.Menu(self)
-        # fileMenu = tk.Menu(menuBar, tearoff=0)
-        # fileMenu.add_command(label="Open", command=self.open_file_browser)
-        # menuBar.add_cascade(label="File", menu=fileMenu)
-        # self.config(menu=menuBar)
 
         limit = FrameObject(master=self,type="entry",text="How many nodes: ",val="20")
 
@@ -147,7 +142,7 @@ class TSPFrame(tk.Frame):
         self.after(100,self.redrawGraph)
 
     def runSolver(self) -> None:
-        bestRoute,cost = self.tsp.useSolver()
+        bestRoute = self.tsp.useORSolver()
         self.updateSolverGraph(bestRoute)
 
     def updateSolverGraph(self,route):
