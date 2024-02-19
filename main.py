@@ -328,7 +328,7 @@ class App(tk.Tk):
         pos = {node: coords for node, coords in nx.get_node_attributes(self.graph, "pos").items()}
         nx.draw(self.graph, pos, with_labels=False, node_size=50, node_color="#4169E1", ax=plot1)
         pos = {node: coords for node, coords in nx.get_node_attributes(self.solverGraph, "pos").items()}
-        nx.draw(self.solverGraph, pos, with_labels=False, node_size=50, node_color="#CC5500", ax=plot1)
+        nx.draw(self.solverGraph, pos, with_labels=False, node_size=50, edge_color="#CC5500", ax=plot1)
         self.canvas.draw()
         self.after(100,self.redrawGraph)
 
