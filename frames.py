@@ -10,21 +10,23 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
 from tkinterObjects import FrameObject
 from file_loader import Loader
 from tsp import TSP
+from pheromone_matrix import PMat
+from ant import AntSim
 
 class StartFrame(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
-        label = tk.Label(self, text="This is the start page")
+        label = tk.Label(self, text="Ant Colony Optimisation")
         label.pack(side="top", fill="x", pady=10)
 
-        button1 = tk.Button(self, text="Go to Page One",
+        tspButton = tk.Button(self, text="Travelling Salesman Implementation",
                             command=lambda: controller.show_frame("TSPFrame"))
-        # button2 = tk.Button(self, text="Go to Page Two",
-        #                     command=lambda: controller.show_frame("PageTwo"))
-        button1.pack()
-        # button2.pack()
+        simButton = tk.Button(self, text="ACO Simulation",
+                            command=lambda: controller.show_frame("SimFrame"))
+        tspButton.pack()
+        simButton.pack()
 
     def menuBar(self,root):
         menuBar = tk.Menu(root)
@@ -35,16 +37,17 @@ class TSPFrame(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
-        label = tk.Label(self, text="This is page 1")
-        label.pack(side="top", fill="x", pady=10)
-        button = tk.Button(self, text="Go to the start page",
-                           command=lambda: controller.show_frame("StartPage"))
-        button.pack()
 
+        label = tk.Label(self, text="Travelling Salesman using ACO")
+        label.pack(side="top", fill="x", pady=10)
+        
         self.coords = []
         self.loader = Loader()
 
         self.createWidgets()
+
+        self.returnButton = tk.Button(master=self, text="Return to the main menu",command=lambda: controller.show_frame("StartFrame"))
+        self.returnButton.pack()
 
         self.after(0, self.redrawGraph)
 
@@ -91,12 +94,26 @@ class TSPFrame(tk.Frame):
         )
         solverButton.pack()
 
-        progressFrame = tk.Frame(master=self)
+        self.progressFrame = tk.Frame(master=self)
 
-        self.progressLabel = tk.Label(master=progressFrame, text="", width=60)
+        self.progressLabel = tk.Label(master=self.progressFrame, text="", width=60)
         self.progressLabel.pack(side=tk.LEFT)
 
-        progressFrame.pack()
+        self.progressFrame.pack()
+
+        self.costFrame = tk.Frame(master=self)
+
+        self.costLabel = tk.Label(master=self.costFrame, text="ACO Cost: 0", width=40)
+        self.costLabel.pack(side=tk.LEFT)
+
+        self.costFrame.pack()
+
+        self.solverCostFrame = tk.Frame(master=self)
+
+        self.solverCostLabel = tk.Label(master=self.solverCostFrame, text="Solver Cost: 0", width=40)
+        self.solverCostLabel.pack(side=tk.LEFT)
+
+        self.solverCostFrame.pack()
 
         self.fig = Figure(figsize = (4, 4), dpi = 100) 
 
@@ -118,9 +135,10 @@ class TSPFrame(tk.Frame):
         if(self.coords == []):
             return
         for i in range(iterations):
-            bestRoute = self.tsp.iterate(α,β,evaporationCoeff,q,antCount)
+            bestRoute,bestCost = self.tsp.iterate(α,β,evaporationCoeff,q,antCount)
             self.updateGraph(bestRoute,coords=self.coords)
             self.progressBarLabel((i/iterations))
+            self.costLabel.config(text="ACO Cost: "+str(bestCost))
         self.updateGraph(bestRoute,coords=self.coords)
 
     def updateGraph(self,route, coords):
@@ -142,8 +160,9 @@ class TSPFrame(tk.Frame):
         self.after(100,self.redrawGraph)
 
     def runSolver(self) -> None:
-        bestRoute = self.tsp.useORSolver()
+        bestRoute,bestCost = self.tsp.useSolver()
         self.updateSolverGraph(bestRoute)
+        self.solverCostLabel.config(text="Solver Cost: "+str(bestCost))
 
     def updateSolverGraph(self,route):
         self.solverGraph.clear()
@@ -162,4 +181,202 @@ class TSPFrame(tk.Frame):
         # Calculates half the percentage, this provides only 50 characters and a less excessive progress bar
         percentOver4 = int(percent/4)
         # Prints out the progress bar, ending in an escape character "\r" so that it keeps printing on the same line everytime
-        self.progressLabel.config(text=string+"Training Progress: "+str(percent)+"% "+("█"*(percentOver4))+("▒"*(25-percentOver4)))
+        self.progressLabel.config(text=string+"Training Progress: "+("█"*(percentOver4))+("▒"*(25-percentOver4)))#+str(percent)+"% "
+
+class SimFrame(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller
+
+        label = tk.Label(self, text="Virtual Simulation using ACO")
+        label.pack(side="top", fill="x", pady=10)
+        
+        # self.coords = []
+        self.loader = Loader()
+
+        self.createWidgets()
+
+        self.returnButton = tk.Button(master=self, text="Return to the main menu",command=lambda: controller.show_frame("StartFrame"))
+        self.returnButton.pack()
+
+        # self.after(0, self.redrawGraph)
+        self.after(0, lambda:self.redrawPixels(self.foodTau,self.nestTau))
+
+    def menuBar(self,root):
+        menuBar = tk.Menu(root)
+        fileMenu = tk.Menu(menuBar, tearoff=0)
+        fileMenu.add_command(label="Open", command=self.open_file_browser)
+        menuBar.add_cascade(label="File", menu=fileMenu)
+        return menuBar
+    
+    def open_file_browser(self):
+        filepath = filedialog.askopenfilename(initialdir="./",title="Select a File")#, filetypes=(("all files", "*.*")))
+        self.coords = self.loader.loadFile(filepath=filepath)
+        if(self.coords):
+            self.tsp = TSP(self.coords)
+
+    def createWidgets(self) -> None:
+
+        self.WIDTH, self.HEIGHT = 320, 320
+        
+        self.SIMWIDTH = 64
+        
+        self.canvas = tk.Canvas(self, width=self.WIDTH, height=self.HEIGHT, bg="#000000")
+        self.canvas.pack()
+        global img
+        img = tk.PhotoImage(width=self.WIDTH, height=self.HEIGHT,file='IMG_0069.png')
+        # canvas.create_image((WIDTH/2, HEIGHT/2), image=img, state="normal")
+
+        global antMap
+        antMap = [[0] * self.SIMWIDTH for i in range(self.SIMWIDTH)]
+
+        self.foodTau = PMat(size=self.SIMWIDTH)
+        self.nestTau = PMat(size=self.SIMWIDTH)
+        for i in range(self.SIMWIDTH):
+            for j in range(self.SIMWIDTH):
+                if(img.get(i,j)[1] == 255):
+                    self.foodTau.set(i,j,1)
+                    self.foodTau.addPersistant([i,j])
+                elif(img.get(i,j)[2] == 255):
+                    self.nestTau.set(i,j,1)
+                    self.nestTau.addPersistant([i,j])
+                elif(img.get(i,j)[0] == 0):
+                    self.foodTau.set(i,j,0.01)
+                    self.nestTau.set(i,j,0.01)
+                else:
+                    self.foodTau.set(i,j,-1)
+                    self.nestTau.set(i,j,-1)
+
+        ants = []
+        spawn = self.nestTau.persist[0]
+        for i in range(1000):
+            ant = AntSim(spawn,1,2,self.SIMWIDTH)
+            antMap[spawn[0]][spawn[1]] += 1
+            ants.append(ant)
+
+        alphaFrame = tk.Frame(master=self)
+
+        alphaLabel = tk.Label(master=alphaFrame, text="Value of pheromone impact: ", width=40)
+        alphaLabel.pack(side=tk.LEFT)
+
+        alphaScale = tk.Scale(master=alphaFrame, from_=0, to=2, resolution=0.1, orient=tk.HORIZONTAL, tickinterval=1, width=20)
+        alphaScale.set(1)
+        alphaScale.pack(side=tk.RIGHT)
+
+        alphaFrame.pack()
+
+        betaFrame = tk.Frame(master=self)
+
+        betaLabel = tk.Label(master=betaFrame, text="Value of proximity impact: ", width=40)
+        betaLabel.pack(side=tk.LEFT)
+
+        betaScale = tk.Scale(master=betaFrame, from_=0, to=4, resolution=0.1, orient=tk.HORIZONTAL, tickinterval=1, width=20)
+        betaScale.set(2)
+        betaScale.pack(side=tk.RIGHT)
+
+        betaFrame.pack()
+
+        evapFrame = tk.Frame(master=self)
+
+        evapLabel = tk.Label(master=evapFrame, text="Evaporation Coefficient: ", width=40)
+        evapLabel.pack(side=tk.LEFT)
+
+        evapScale = tk.Scale(master=evapFrame, from_=0, to=0.5, resolution=0.01, orient=tk.HORIZONTAL, width=20)
+        evapScale.set(0.1)
+        evapScale.pack(side=tk.RIGHT)
+
+        evapFrame.pack()
+
+        startButton = tk.Button(
+            master=self,
+            text="Run Sim", 
+            width=25, 
+            command=lambda:self.runSimThread(
+                foodTau=self.foodTau,
+                nestTau=self.nestTau,
+                ants=ants,
+                alpha=float(alphaScale.get()),
+                beta=float(betaScale.get()),
+                evap=float(evapScale.get())
+            )
+        )
+        startButton.pack()
+
+        
+        # window.mainloop()
+
+    def runSimThread(self,foodTau, nestTau, ants, alpha, beta, evap):
+        for ant in ants:
+            ant.alpha = alpha
+            ant.beta = beta
+        t = threading.Thread(target=lambda:self.runSim(foodTau=foodTau, nestTau=nestTau, ants=ants, evaporation=evap))
+        t.start()
+
+    def runSim(self,foodTau, nestTau, ants, evaporation):
+        population = len(ants)
+        # evaporation = 0.02
+        pheromone = 1
+        for i in range(5000):
+            for ant in ants:
+                antMap[ant.x][ant.y] -= 1
+                ant.move(foodTau,nestTau)
+                if(ant.foundFood):
+                    foodTau.add(ant.x,ant.y,(pheromone/population))
+                else:
+                    nestTau.add(ant.x,ant.y,(pheromone/population))
+                antMap[ant.x][ant.y] += 1
+            foodTau.evaporate(evaporation)
+            nestTau.evaporate(evaporation)
+            if(i % 50 == 0):
+                self.redrawPixels(foodTau,nestTau)
+
+    def redrawPixels(self,foodTau,nestTau):
+        self.canvas.delete("all")
+        colourMap = [["#"] * self.SIMWIDTH for i in range(self.SIMWIDTH)]
+        highestPher = foodTau.highest()
+        pherMap = foodTau.all()
+        for i,row in enumerate(pherMap):
+            for j,item in enumerate(row):
+                if(item>0 and [i,j] not in foodTau.persist):
+                    val = (item/highestPher)
+                else:
+                    val = 0
+                r = str(hex(int(255*val))[2:])
+                if(len(r) == 1):
+                    r = "0" + r
+                colourMap[i][j] += r
+        highestPher2 = nestTau.highest()
+        pherMap2 = nestTau.all()
+        for i,row in enumerate(pherMap2):
+            for j,item in enumerate(row):
+                if(item>0 and [i,j] not in nestTau.persist):
+                    val = (item/highestPher2)
+                else:
+                    val = 0
+                g = str(hex(int(255*val))[2:])
+                if(len(g) == 1):
+                    g = "0" + g
+                colourMap[i][j] += g
+                    # colour = '#'+str(hex(int(255*val))[2:])+str(hex(int(1))[2:])+str(hex(int(1))[2:])
+                    # canvas.create_rectangle(i*10,j*10,(i*10)+10,(j*10)+10,fill=colour,width=0)
+        highestAnt = 0
+        for row in antMap:
+            if(max(row)>highestAnt):
+                highestAnt = max(row)
+        for i,row in enumerate(antMap):
+            for j,item in enumerate(row):
+                if(item > 0):
+                    val = (item/highestAnt)
+                else:
+                    val = 0
+                b = str(hex(int(255*val))[2:])
+                if(len(b) == 1):
+                    b = "0" + b
+                colourMap[i][j] += b
+                    # colour = '#'+str(hex(int(255*val))[2:])+str(hex(int(255*val))[2:])+str(hex(int(1))[2:])
+                    # canvas.create_rectangle(i*10,j*10,(i*10)+10,(j*10)+10,fill=colour,width=0)
+        for i,row in enumerate(colourMap):
+            for j,item in enumerate(row):
+                if item != '#000000':
+                    self.canvas.create_rectangle(i*5,j*5,(i*5)+5,(j*5)+5,fill=item,width=0)
+        # window.after(50,redrawPixels)

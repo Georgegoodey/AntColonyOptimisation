@@ -35,7 +35,14 @@ class TSP:
             self.tau += tauChange / antCount
             tauChange = np.zeros(self.distMat.shape)
         self.tau *= (1-evaporationCoeff)
-        return self.bestRoute
+        return self.bestRoute,self.bestCost
+
+    def useSolver(self):
+        if(solution := self.useORSolver()):
+            return solution,0
+        else:
+            solution,cost = self.usePySolver()
+            return solution,cost
 
     def usePySolver(self):
         route,distance = solve_tsp_simulated_annealing(np.array(self.distMat.all()))
@@ -43,7 +50,8 @@ class TSP:
         return route,distance
     
     def useORSolver(self):
-        self.distance_matrix = np.floor(np.array(self.distMat.all())*10000).astype(int).tolist()
+        distance_matrix_np = np.array(self.distMat.all())
+        self.distance_matrix = np.floor(distance_matrix_np*10000).astype(int).tolist()
 
         self.manager = pywrapcp.RoutingIndexManager(self.distMat.size,1,0)
 
@@ -69,6 +77,7 @@ class TSP:
                 route.append(self.manager.IndexToNode(index))
 
             return route
+        return None
 
     def distance_callback(self,from_index, to_index):
         """Returns the distance between the two nodes."""

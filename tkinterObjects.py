@@ -1,6 +1,6 @@
 import tkinter as tk
 
-class FrameObject:
+class FrameObject():
 
     frame: tk.Frame
     label: tk.Label
