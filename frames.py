@@ -22,9 +22,9 @@ class StartFrame(tk.Frame):
         label.pack(side="top", fill="x", pady=10)
 
         tspButton = tk.Button(self, text="Travelling Salesman Implementation",
-                            command=lambda: controller.show_frame("TSPFrame"))
+                            command=lambda: controller.showFrame("TSPFrame"))
         simButton = tk.Button(self, text="ACO Simulation",
-                            command=lambda: controller.show_frame("SimFrame"))
+                            command=lambda: controller.showFrame("SimFrame"))
         tspButton.pack()
         simButton.pack()
 
@@ -46,7 +46,7 @@ class TSPFrame(tk.Frame):
 
         self.createWidgets()
 
-        self.returnButton = tk.Button(master=self, text="Return to the main menu",command=lambda: controller.show_frame("StartFrame"))
+        self.returnButton = tk.Button(master=self, text="Return to the main menu",command=lambda: controller.showFrame("StartFrame"))
         self.returnButton.pack()
 
         self.after(0, self.redrawGraph)
@@ -190,17 +190,15 @@ class SimFrame(tk.Frame):
 
         label = tk.Label(self, text="Virtual Simulation using ACO")
         label.pack(side="top", fill="x", pady=10)
-        
-        # self.coords = []
-        self.loader = Loader()
+
+        self.foodTau = None
+        self.nestTau = None
+        self.ants = []
 
         self.createWidgets()
 
-        self.returnButton = tk.Button(master=self, text="Return to the main menu",command=lambda: controller.show_frame("StartFrame"))
+        self.returnButton = tk.Button(master=self, text="Return to the main menu",command=lambda: controller.showFrame("StartFrame"))
         self.returnButton.pack()
-
-        # self.after(0, self.redrawGraph)
-        self.after(0, lambda:self.redrawPixels(self.foodTau,self.nestTau))
 
     def menuBar(self,root):
         menuBar = tk.Menu(root)
@@ -211,9 +209,8 @@ class SimFrame(tk.Frame):
     
     def open_file_browser(self):
         filepath = filedialog.askopenfilename(initialdir="./",title="Select a File")#, filetypes=(("all files", "*.*")))
-        self.coords = self.loader.loadFile(filepath=filepath)
-        if(self.coords):
-            self.tsp = TSP(self.coords)
+        if(filepath):
+            self.loadSim(filename=filepath)
 
     def createWidgets(self) -> None:
 
@@ -223,36 +220,6 @@ class SimFrame(tk.Frame):
         
         self.canvas = tk.Canvas(self, width=self.WIDTH, height=self.HEIGHT, bg="#000000")
         self.canvas.pack()
-        global img
-        img = tk.PhotoImage(width=self.WIDTH, height=self.HEIGHT,file='IMG_0069.png')
-        # canvas.create_image((WIDTH/2, HEIGHT/2), image=img, state="normal")
-
-        global antMap
-        antMap = [[0] * self.SIMWIDTH for i in range(self.SIMWIDTH)]
-
-        self.foodTau = PMat(size=self.SIMWIDTH)
-        self.nestTau = PMat(size=self.SIMWIDTH)
-        for i in range(self.SIMWIDTH):
-            for j in range(self.SIMWIDTH):
-                if(img.get(i,j)[1] == 255):
-                    self.foodTau.set(i,j,1)
-                    self.foodTau.addPersistant([i,j])
-                elif(img.get(i,j)[2] == 255):
-                    self.nestTau.set(i,j,1)
-                    self.nestTau.addPersistant([i,j])
-                elif(img.get(i,j)[0] == 0):
-                    self.foodTau.set(i,j,0.01)
-                    self.nestTau.set(i,j,0.01)
-                else:
-                    self.foodTau.set(i,j,-1)
-                    self.nestTau.set(i,j,-1)
-
-        ants = []
-        spawn = self.nestTau.persist[0]
-        for i in range(1000):
-            ant = AntSim(spawn,1,2,self.SIMWIDTH)
-            antMap[spawn[0]][spawn[1]] += 1
-            ants.append(ant)
 
         alphaFrame = tk.Frame(master=self)
 
@@ -294,7 +261,7 @@ class SimFrame(tk.Frame):
             command=lambda:self.runSimThread(
                 foodTau=self.foodTau,
                 nestTau=self.nestTau,
-                ants=ants,
+                ants=self.ants,
                 alpha=float(alphaScale.get()),
                 beta=float(betaScale.get()),
                 evap=float(evapScale.get())
@@ -302,8 +269,38 @@ class SimFrame(tk.Frame):
         )
         startButton.pack()
 
+        # self.loadSim()
+
+    def loadSim(self, filename):
+
+        self.img = tk.PhotoImage(width=self.WIDTH, height=self.HEIGHT,file=filename)
         
-        # window.mainloop()
+        self.foodTau = PMat(size=self.SIMWIDTH)
+        self.nestTau = PMat(size=self.SIMWIDTH)
+
+        self.antMap = [[0] * self.SIMWIDTH for i in range(self.SIMWIDTH)]
+
+        for i in range(self.SIMWIDTH):
+            for j in range(self.SIMWIDTH):
+                if(self.img.get(i,j)[1] == 255):
+                    self.foodTau.set(i,j,1)
+                    self.foodTau.addPersistant([i,j])
+                elif(self.img.get(i,j)[2] == 255):
+                    self.nestTau.set(i,j,1)
+                    self.nestTau.addPersistant([i,j])
+                elif(self.img.get(i,j)[0] == 0):
+                    self.foodTau.set(i,j,0.01)
+                    self.nestTau.set(i,j,0.01)
+                else:
+                    self.foodTau.set(i,j,-1)
+                    self.nestTau.set(i,j,-1)
+
+        self.ants = []
+        spawn = self.nestTau.persist[0]
+        for i in range(1000):
+            ant = AntSim(spawn,1,2,self.SIMWIDTH)
+            self.antMap[spawn[0]][spawn[1]] += 1
+            self.ants.append(ant)
 
     def runSimThread(self,foodTau, nestTau, ants, alpha, beta, evap):
         for ant in ants:
@@ -313,18 +310,20 @@ class SimFrame(tk.Frame):
         t.start()
 
     def runSim(self,foodTau, nestTau, ants, evaporation):
+        if(foodTau == None):
+            return
         population = len(ants)
         # evaporation = 0.02
         pheromone = 1
         for i in range(5000):
             for ant in ants:
-                antMap[ant.x][ant.y] -= 1
+                self.antMap[ant.x][ant.y] -= 1
                 ant.move(foodTau,nestTau)
                 if(ant.foundFood):
                     foodTau.add(ant.x,ant.y,(pheromone/population))
                 else:
                     nestTau.add(ant.x,ant.y,(pheromone/population))
-                antMap[ant.x][ant.y] += 1
+                self.antMap[ant.x][ant.y] += 1
             foodTau.evaporate(evaporation)
             nestTau.evaporate(evaporation)
             if(i % 50 == 0):
@@ -357,13 +356,11 @@ class SimFrame(tk.Frame):
                 if(len(g) == 1):
                     g = "0" + g
                 colourMap[i][j] += g
-                    # colour = '#'+str(hex(int(255*val))[2:])+str(hex(int(1))[2:])+str(hex(int(1))[2:])
-                    # canvas.create_rectangle(i*10,j*10,(i*10)+10,(j*10)+10,fill=colour,width=0)
         highestAnt = 0
-        for row in antMap:
+        for row in self.antMap:
             if(max(row)>highestAnt):
                 highestAnt = max(row)
-        for i,row in enumerate(antMap):
+        for i,row in enumerate(self.antMap):
             for j,item in enumerate(row):
                 if(item > 0):
                     val = (item/highestAnt)
@@ -373,10 +370,7 @@ class SimFrame(tk.Frame):
                 if(len(b) == 1):
                     b = "0" + b
                 colourMap[i][j] += b
-                    # colour = '#'+str(hex(int(255*val))[2:])+str(hex(int(255*val))[2:])+str(hex(int(1))[2:])
-                    # canvas.create_rectangle(i*10,j*10,(i*10)+10,(j*10)+10,fill=colour,width=0)
         for i,row in enumerate(colourMap):
             for j,item in enumerate(row):
                 if item != '#000000':
                     self.canvas.create_rectangle(i*5,j*5,(i*5)+5,(j*5)+5,fill=item,width=0)
-        # window.after(50,redrawPixels)

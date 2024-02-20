@@ -14,8 +14,8 @@ class App(tk.Tk):
         # self.state('zoomed') 
 
         self.fs = False
-        self.bind("<F11>", self.toggle_fullscreen)
-        self.bind("<Escape>", self.end_fullscreen)
+        self.bind("<F11>", self.toggleFullscreen)
+        self.bind("<Escape>", self.endFullscreen)
 
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand=True)
@@ -30,9 +30,9 @@ class App(tk.Tk):
 
             frame.grid(row=0, column=0, sticky="nsew")
 
-        self.show_frame("StartFrame")
+        self.showFrame("StartFrame")
 
-    def show_frame(self, page_name):
+    def showFrame(self, page_name):
         '''
             Show a frame for the given page name
         '''
@@ -42,26 +42,15 @@ class App(tk.Tk):
         menuBar = frame.menuBar(self)
         self.configure(menu=menuBar)
 
-    def toggle_fullscreen(self,even=None):
+    def toggleFullscreen(self,even=None):
         self.fs = not self.fs
         self.attributes("-fullscreen", self.fs)
 
-    def end_fullscreen(self,event=None):
+    def endFullscreen(self,event=None):
         self.fs = False
         self.attributes("-fullscreen", False)
 
 if __name__ == "__main__":
     app = App()
     app.mainloop()
-
-def progressBar(data:float,string:str="") -> None:
-    '''
-        data: float between 0-1
-        string: a string to be displayed after the progress bar
-    '''
-    # Gets position of index in list over list length as a floored percentage
-    percent = int(np.floor(data*100))
-    # Calculates half the percentage, this provides only 50 characters and a less excessive progress bar
-    percentOver4 = int(percent/4)
-    # Prints out the progress bar, ending in an escape character "\r" so that it keeps printing on the same line everytime
-    print(string+"Training Progress: "+str(percent)+"% "+("█"*(percentOver4))+("▒"*(25-percentOver4)), end="\r")
+    print("App finished")
