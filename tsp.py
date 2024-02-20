@@ -38,9 +38,12 @@ class TSP:
         return self.bestRoute,self.bestCost
 
     def useSolver(self):
-        if(solution := self.useORSolver()):
-            return solution,0
+        solution,cost = self.useORSolver()
+        if(solution):
+            # print("Used OR")
+            return solution,cost
         else:
+            # print("Used Py")
             solution,cost = self.usePySolver()
             return solution,cost
 
@@ -50,8 +53,8 @@ class TSP:
         return route,distance
     
     def useORSolver(self):
-        distance_matrix_np = np.array(self.distMat.all())
-        self.distance_matrix = np.floor(distance_matrix_np*10000).astype(int).tolist()
+        distance_matrix_np = np.array(self.distMat.all())*100
+        self.distance_matrix = np.floor(distance_matrix_np).astype(int).tolist()
 
         self.manager = pywrapcp.RoutingIndexManager(self.distMat.size,1,0)
 
@@ -76,7 +79,7 @@ class TSP:
                 index = solution.Value(routing.NextVar(index))
                 route.append(self.manager.IndexToNode(index))
 
-            return route
+            return route,solution.ObjectiveValue()
         return None
 
     def distance_callback(self,from_index, to_index):

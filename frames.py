@@ -7,7 +7,7 @@ from tkinter import filedialog
 from matplotlib.figure import Figure 
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg) 
 
-from tkinterObjects import FrameObject
+from tkinter_objects import FrameObject
 from file_loader import Loader
 from tsp import TSP
 from pheromone_matrix import PMat
@@ -268,8 +268,6 @@ class SimFrame(tk.Frame):
             )
         )
         startButton.pack()
-
-        # self.loadSim()
 
     def loadSim(self, filename):
 
