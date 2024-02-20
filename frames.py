@@ -38,21 +38,25 @@ class TSPFrame(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.controller = controller
 
-        label = tk.Label(self, text="Travelling Salesman using ACO")
-        label.pack(side="top", fill="x", pady=10)
+        titleFrame = tk.Frame(master=self, width=1000)
+
+        label = tk.Label(master=titleFrame, text="Travelling Salesman using ACO")
+        label.pack(side=tk.BOTTOM, pady=10)
+
+        self.returnButton = tk.Button(master=titleFrame, text="Return to Main Menu",command=lambda: controller.showFrame("StartFrame"))
+        self.returnButton.pack(side=tk.LEFT)
+
+        titleFrame.pack(side=tk.TOP, fill=tk.X)
         
         self.coords = []
         self.loader = Loader()
 
         self.createWidgets()
 
-        self.returnButton = tk.Button(master=self, text="Return to the main menu",command=lambda: controller.showFrame("StartFrame"))
-        self.returnButton.pack()
-
         self.after(0, self.redrawGraph)
 
     def open_file_browser(self):
-        filepath = filedialog.askopenfilename(initialdir="./",title="Select a File")#, filetypes=(("all files", "*.*")))
+        filepath = filedialog.askopenfilename(initialdir="./",title="Select a File", filetypes=(("TSP files", "*.tsp"), ("All files", "*.*")))
         self.coords = self.loader.loadFile(filepath=filepath)
         if(self.coords):
             self.tsp = TSP(self.coords)
@@ -66,20 +70,24 @@ class TSPFrame(tk.Frame):
 
     def createWidgets(self):
 
-        limit = FrameObject(master=self,type="entry",text="How many nodes: ",val="20")
+        widgetFrame = tk.Frame(master=self)
 
-        count = FrameObject(master=self,type="entry",text="How many ants: ",val="30")
+        menuFrame = tk.Frame(master=widgetFrame)
 
-        iterations = FrameObject(master=self,type="entry",text="How many iterations: ",val="30")
+        # limit = FrameObject(master=self,type="entry",text="How many nodes: ",val="20")
 
-        alpha = FrameObject(master=self,type="scale",text="Value of pheromone impact: ",val=1,size=(0,2),resolution=0.1)
+        count = FrameObject(master=menuFrame,type="entry",text="How many ants: ",val="30")
 
-        beta = FrameObject(master=self,type="scale",text="Value of proximity impact: ",val=2,size=(0,4),resolution=0.1)
+        iterations = FrameObject(master=menuFrame,type="entry",text="How many iterations: ",val="30")
 
-        evap = FrameObject(master=self,type="scale",text="Evaporation Coefficient: ",val=0.1,size=(0,1),resolution=0.05)
+        alpha = FrameObject(master=menuFrame,type="scale",text="Value of pheromone impact: ",val=1,size=(0,2),resolution=0.1)
+
+        beta = FrameObject(master=menuFrame,type="scale",text="Value of proximity impact: ",val=2,size=(0,4),resolution=0.1)
+
+        evap = FrameObject(master=menuFrame,type="scale",text="Evaporation Coefficient: ",val=0.1,size=(0,1),resolution=0.05)
 
         startButton = tk.Button(
-            master=self,
+            master=menuFrame,
             text="Run Sim", 
             width=25, 
             command=lambda:self.runThread(alpha.get(),beta.get(),evap.get(),1,int(count.get()),int(iterations.get()))
@@ -87,45 +95,50 @@ class TSPFrame(tk.Frame):
         startButton.pack()
 
         solverButton = tk.Button(
-            master=self,
+            master=menuFrame,
             text="Run Solver", 
             width=25, 
             command=lambda:self.runSolver()
         )
         solverButton.pack()
 
-        self.progressFrame = tk.Frame(master=self)
+        self.progressFrame = tk.Frame(master=menuFrame)
 
         self.progressLabel = tk.Label(master=self.progressFrame, text="", width=60)
         self.progressLabel.pack(side=tk.LEFT)
+        self.progressBarLabel(0)
 
         self.progressFrame.pack()
 
-        self.costFrame = tk.Frame(master=self)
+        self.costFrame = tk.Frame(master=menuFrame)
 
         self.costLabel = tk.Label(master=self.costFrame, text="ACO Cost: 0", width=40)
         self.costLabel.pack(side=tk.LEFT)
 
         self.costFrame.pack()
 
-        self.solverCostFrame = tk.Frame(master=self)
+        self.solverCostFrame = tk.Frame(master=menuFrame)
 
         self.solverCostLabel = tk.Label(master=self.solverCostFrame, text="Solver Cost: 0", width=40)
         self.solverCostLabel.pack(side=tk.LEFT)
 
         self.solverCostFrame.pack()
 
+        menuFrame.pack(side=tk.LEFT)
+
         self.fig = Figure(figsize = (4, 4), dpi = 100) 
 
-        self.canvas = FigureCanvasTkAgg(self.fig, 
-                                master = self)   
+        # Trying to make this scale
+        self.canvas = FigureCanvasTkAgg(self.fig,master=widgetFrame)
         self.canvas.draw() 
 
-        self.canvas.get_tk_widget().pack()
+        self.canvas.get_tk_widget().pack(side=tk.RIGHT,fill=tk.BOTH)
 
         self.graph = nx.Graph()
 
         self.solverGraph = nx.Graph()
+
+        widgetFrame.pack(fill=tk.BOTH)
 
     def runThread(self,alpha,beta,evap,q,count,iterations):
         t = threading.Thread(target=lambda:self.runTSP(alpha,beta,evap,q,count,iterations))
@@ -208,7 +221,7 @@ class SimFrame(tk.Frame):
         return menuBar
     
     def open_file_browser(self):
-        filepath = filedialog.askopenfilename(initialdir="./",title="Select a File")#, filetypes=(("all files", "*.*")))
+        filepath = filedialog.askopenfilename(initialdir="./",title="Select a File", filetypes=(("PNG files", "*.png"), ("All files", "*.*")))
         if(filepath):
             self.loadSim(filename=filepath)
 
