@@ -14,7 +14,7 @@ class TSP:
     def __init__(self, coords):
         self.coords = coords
         self.distMat = Mat(len(self.coords))
-        self.distMat.formDistMat(self.coords,"haversine")
+        self.distMat.formDistMat(self.coords,"pythagoras")
         self.tau = np.ones(self.distMat.shape)
         # Python version of infinitely high cost
         self.bestCost = float("inf")
@@ -37,11 +37,10 @@ class TSP:
         self.tau *= (1-evaporationCoeff)
         return self.bestRoute,self.bestCost
 
-    def getCost(route):
+    def getCost(self,route):
         cost = 0
-        for r in range(len(route)-2):
+        for r in range(len(route)-1):
             cost += self.distMat.get(route[r],route[r+1])
-        cost += self.distMat.get(route[len(route-1)],route[0])
         return cost
 
     def useSolver(self):

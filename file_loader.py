@@ -90,7 +90,7 @@ def loadTSP(filename:str):
         tour_index = lines.index("TOUR_SECTION\n") + 1
         tour = []
         for line in lines[tour_index:tour_index + dimension]:
-            city_number = int(line)
+            city_number = int(line)-1
             tour.append(city_number)
 
     return (coords,tour)

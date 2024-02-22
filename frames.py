@@ -59,16 +59,12 @@ class TSPFrame(tk.Frame):
         filepath = filedialog.askopenfilename(initialdir="./",title="Select a File", filetypes=(("TSP files", "*.tsp"), ("All files", "*.*")))
         file = self.loader.loadFile(filepath=filepath)
         self.coords = file[0]
-        # if(file[1] != None):
-        #     self.tour = file[1]
-        #     print(self.tour)
-        #     print(self.tsp.getCost(self.tour))
         if(self.coords):
             self.tsp = TSP(self.coords)
         if(file[1] != None):
             self.tour = file[1]
-            print(self.tour)
-            print(self.tsp.getCost(self.tour))
+            self.tour.append(self.tour[0])
+            self.updateGraph(self.tour,self.solutionGraph)
 
     def menuBar(self,root):
         menuBar = tk.Menu(root)
@@ -147,6 +143,8 @@ class TSPFrame(tk.Frame):
 
         self.solverGraph = nx.Graph()
 
+        self.solutionGraph = nx.Graph()
+
         widgetFrame.pack(fill=tk.BOTH)
 
     def runThread(self,alpha,beta,evap,q,count,iterations):
@@ -158,40 +156,42 @@ class TSPFrame(tk.Frame):
             return
         for i in range(iterations):
             bestRoute,bestCost = self.tsp.iterate(α,β,evaporationCoeff,q,antCount)
-            self.updateGraph(bestRoute,coords=self.coords)
+            self.updateGraph(bestRoute,self.graph)
             self.progressBarLabel((i/iterations))
             self.costLabel.config(text="ACO Cost: "+str(bestCost))
-        self.updateGraph(bestRoute,coords=self.coords)
+        self.updateGraph(bestRoute,self.graph)
 
-    def updateGraph(self,route, coords):
-        self.graph.clear()
+    def updateGraph(self,route,graph):
+        graph.clear()
         for r in range(len(route)-1):
             node = route[r]
-            self.graph.add_node(node,pos=(coords[node][1], coords[node][0]))
-            self.graph.add_edge(node, route[r+1])
+            graph.add_node(node,pos=(self.coords[node][1], self.coords[node][0]))
+            graph.add_edge(node, route[r+1])
 
     def redrawGraph(self): 
         self.fig.clf()
         plot1 = self.fig.add_subplot(111)
 
         pos = {node: coords for node, coords in nx.get_node_attributes(self.graph, "pos").items()}
-        nx.draw(self.graph, pos, with_labels=False, node_size=50, node_color="#4169E1", ax=plot1)
+        nx.draw(self.graph, pos, with_labels=False, node_size=50, node_color="#CC6600", ax=plot1)
         pos = {node: coords for node, coords in nx.get_node_attributes(self.solverGraph, "pos").items()}
-        nx.draw(self.solverGraph, pos, with_labels=False, node_size=50, edge_color="#CC5500", ax=plot1)
+        nx.draw(self.solverGraph, pos, with_labels=False, node_size=50, edge_color="#0099CC", ax=plot1)
+        pos = {node: coords for node, coords in nx.get_node_attributes(self.solutionGraph, "pos").items()}
+        nx.draw(self.solutionGraph, pos, with_labels=False, node_size=50, edge_color="#66FF33", ax=plot1)
         self.canvas.draw()
         self.after(100,self.redrawGraph)
 
     def runSolver(self) -> None:
         bestRoute,bestCost = self.tsp.useSolver()
-        self.updateSolverGraph(bestRoute)
+        self.updateGraph(bestRoute,self.solverGraph)
         self.solverCostLabel.config(text="Solver Cost: "+str(bestCost))
 
-    def updateSolverGraph(self,route):
-        self.solverGraph.clear()
-        for r in range(len(route)-1):
-            node = route[r]
-            self.solverGraph.add_node(node,pos=(self.coords[node][1], self.coords[node][0]))
-            self.solverGraph.add_edge(node, route[r+1])
+    # def updateSolverGraph(self,route):
+    #     self.solverGraph.clear()
+    #     for r in range(len(route)-1):
+    #         node = route[r]
+    #         self.solverGraph.add_node(node,pos=(self.coords[node][1], self.coords[node][0]))
+    #         self.solverGraph.add_edge(node, route[r+1])
 
     def progressBarLabel(self,data:float,string:str="") -> None:
         '''
