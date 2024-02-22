@@ -84,4 +84,13 @@ def loadTSP(filename:str):
         x, y = map(float, parts[1:])
         coords.append((x, y))
 
-    return coords
+    tour = None
+
+    if("TOUR_SECTION\n" in lines):
+        tour_index = lines.index("TOUR_SECTION\n") + 1
+        tour = []
+        for line in lines[tour_index:tour_index + dimension]:
+            city_number = int(line)
+            tour.append(city_number)
+
+    return (coords,tour)

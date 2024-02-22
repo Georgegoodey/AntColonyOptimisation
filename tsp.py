@@ -37,6 +37,13 @@ class TSP:
         self.tau *= (1-evaporationCoeff)
         return self.bestRoute,self.bestCost
 
+    def getCost(route):
+        cost = 0
+        for r in range(len(route)-2):
+            cost += self.distMat.get(route[r],route[r+1])
+        cost += self.distMat.get(route[len(route-1)],route[0])
+        return cost
+
     def useSolver(self):
         solution,cost = self.useORSolver()
         if(solution):

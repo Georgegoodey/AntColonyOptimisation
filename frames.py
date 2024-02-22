@@ -57,9 +57,18 @@ class TSPFrame(tk.Frame):
 
     def open_file_browser(self):
         filepath = filedialog.askopenfilename(initialdir="./",title="Select a File", filetypes=(("TSP files", "*.tsp"), ("All files", "*.*")))
-        self.coords = self.loader.loadFile(filepath=filepath)
+        file = self.loader.loadFile(filepath=filepath)
+        self.coords = file[0]
+        # if(file[1] != None):
+        #     self.tour = file[1]
+        #     print(self.tour)
+        #     print(self.tsp.getCost(self.tour))
         if(self.coords):
             self.tsp = TSP(self.coords)
+        if(file[1] != None):
+            self.tour = file[1]
+            print(self.tour)
+            print(self.tsp.getCost(self.tour))
 
     def menuBar(self,root):
         menuBar = tk.Menu(root)
