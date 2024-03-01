@@ -64,6 +64,9 @@ class TSPFrame(tk.Frame):
         self.coords = file[0]
         if(self.coords):
             self.tsp = TSP(self.coords)
+        self.graph = nx.Graph()
+        self.solverGraph = nx.Graph()
+        self.solutionGraph = nx.Graph()
         if(file[1] != None):
             self.tour = file[1]
             self.tour.append(self.tour[0])
@@ -92,25 +95,24 @@ class TSPFrame(tk.Frame):
 
         beta = FrameObject(master=menuFrame,type="scale",text="Value of proximity impact: ",val=2,size=(0,4),resolution=0.1)
 
-        evap = FrameObject(master=menuFrame,type="scale",text="Evaporation Coefficient: ",val=0.1,size=(0,1),resolution=0.05)
+        evap = FrameObject(master=menuFrame,type="scale",text="Evaporation Coefficient: ",val=0.1,size=(0,1),resolution=0.01)
 
         acoFrame =  tk.Frame(master=menuFrame)
 
-        startButton = tk.Button(
+        self.startButton = tk.Button(
             master=acoFrame,
-            text="Run Sim", 
+            text="Start ACO", 
             width=25, 
             command=lambda:self.runThread(alpha.get(),beta.get(),evap.get(),1,int(count.get()),int(iterations.get()))
         )
-        startButton.pack(side=tk.LEFT)
+        self.startButton.pack()
 
-        stopButton = tk.Button(
+        self.stopButton = tk.Button(
             master=acoFrame,
-            text="Run Sim", 
+            text="Stop", 
             width=25, 
-            command=lambda:self.runThread(alpha.get(),beta.get(),evap.get(),1,int(count.get()),int(iterations.get()))
+            command=self.stopRunning
         )
-        stopButton.pack(side=tk.RIGHT)
 
         acoFrame.pack()
 
@@ -156,21 +158,27 @@ class TSPFrame(tk.Frame):
 
     def stopRunning(self):
         self.running = False
+        self.startButton.pack()
+        self.stopButton.pack_forget()
 
     def runThread(self,alpha,beta,evap,q,count,iterations):
-        t = threading.Thread(target=lambda:self.runTSP(alpha,beta,evap,q,count,iterations))
-        t.start()
+        self.thread = threading.Thread(target=lambda:self.runTSP(alpha,beta,evap,q,count,iterations))
+        self.thread.start()
 
     def runTSP(self,α,β,evaporationCoeff,q,antCount,iterations) -> None:
+        self.stopButton.pack()
+        self.startButton.pack_forget()
         if(self.coords == []):
             return
         # for i in range(iterations):
         self.running = True
         while(self.running):
             bestRoute,bestCost = self.tsp.iterate(α,β,evaporationCoeff,q,antCount)
+            bestCost = self.tsp.getCost(bestRoute)
             self.updateGraph(bestRoute,self.graph)
             # self.progressBarLabel((i/iterations))
             self.cost.setText(text="ACO Cost: "+str(math.floor(bestCost)))
+        print("Loop finished")
         self.updateGraph(bestRoute,self.graph)
 
     def updateGraph(self,route,graph):
@@ -195,6 +203,7 @@ class TSPFrame(tk.Frame):
 
     def runSolver(self) -> None:
         bestRoute,bestCost = self.tsp.useSolver()
+        bestCost = self.tsp.getCost(bestRoute)
         self.updateGraph(bestRoute,self.solverGraph)
         self.solverCost.setText(text="Solver Cost: "+str(math.floor(bestCost)))
 
