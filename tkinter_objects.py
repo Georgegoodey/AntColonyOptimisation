@@ -24,3 +24,6 @@ class FrameObject():
 
     def get(self):
         return float(self.val.get())
+
+    def setText(self, text=""):
+        self.label.config(text=text)

@@ -2,6 +2,7 @@ import tkinter as tk
 import networkx as nx
 import threading
 import numpy as np
+import math
 
 from tkinter import filedialog
 from matplotlib.figure import Figure 
@@ -51,6 +52,8 @@ class TSPFrame(tk.Frame):
         self.coords = []
         self.loader = Loader()
 
+        self.running = False
+
         self.createWidgets()
 
         self.after(0, self.redrawGraph)
@@ -65,6 +68,8 @@ class TSPFrame(tk.Frame):
             self.tour = file[1]
             self.tour.append(self.tour[0])
             self.updateGraph(self.tour,self.solutionGraph)
+            cost = self.tsp.getCost(self.tour)
+            self.solutionCost.setText(text="File Solution Cost: "+str(math.floor(cost)))
 
     def menuBar(self,root):
         menuBar = tk.Menu(root)
@@ -79,8 +84,6 @@ class TSPFrame(tk.Frame):
 
         menuFrame = tk.Frame(master=widgetFrame)
 
-        # limit = FrameObject(master=self,type="entry",text="How many nodes: ",val="20")
-
         count = FrameObject(master=menuFrame,type="entry",text="How many ants: ",val="30")
 
         iterations = FrameObject(master=menuFrame,type="entry",text="How many iterations: ",val="30")
@@ -91,13 +94,25 @@ class TSPFrame(tk.Frame):
 
         evap = FrameObject(master=menuFrame,type="scale",text="Evaporation Coefficient: ",val=0.1,size=(0,1),resolution=0.05)
 
+        acoFrame =  tk.Frame(master=menuFrame)
+
         startButton = tk.Button(
-            master=menuFrame,
+            master=acoFrame,
             text="Run Sim", 
             width=25, 
             command=lambda:self.runThread(alpha.get(),beta.get(),evap.get(),1,int(count.get()),int(iterations.get()))
         )
-        startButton.pack()
+        startButton.pack(side=tk.LEFT)
+
+        stopButton = tk.Button(
+            master=acoFrame,
+            text="Run Sim", 
+            width=25, 
+            command=lambda:self.runThread(alpha.get(),beta.get(),evap.get(),1,int(count.get()),int(iterations.get()))
+        )
+        stopButton.pack(side=tk.RIGHT)
+
+        acoFrame.pack()
 
         solverButton = tk.Button(
             master=menuFrame,
@@ -115,19 +130,11 @@ class TSPFrame(tk.Frame):
 
         self.progressFrame.pack()
 
-        self.costFrame = tk.Frame(master=menuFrame)
+        self.cost = FrameObject(master=menuFrame,type="label",text="ACO Cost: 0")
 
-        self.costLabel = tk.Label(master=self.costFrame, text="ACO Cost: 0", width=40)
-        self.costLabel.pack(side=tk.LEFT)
+        self.solverCost = FrameObject(master=menuFrame,type="label",text="Solver Cost: 0")
 
-        self.costFrame.pack()
-
-        self.solverCostFrame = tk.Frame(master=menuFrame)
-
-        self.solverCostLabel = tk.Label(master=self.solverCostFrame, text="Solver Cost: 0", width=40)
-        self.solverCostLabel.pack(side=tk.LEFT)
-
-        self.solverCostFrame.pack()
+        self.solutionCost = FrameObject(master=menuFrame,type="label",text="File Solution Cost: 0")
 
         menuFrame.pack(side=tk.LEFT)
 
@@ -147,6 +154,9 @@ class TSPFrame(tk.Frame):
 
         widgetFrame.pack(fill=tk.BOTH)
 
+    def stopRunning(self):
+        self.running = False
+
     def runThread(self,alpha,beta,evap,q,count,iterations):
         t = threading.Thread(target=lambda:self.runTSP(alpha,beta,evap,q,count,iterations))
         t.start()
@@ -154,11 +164,13 @@ class TSPFrame(tk.Frame):
     def runTSP(self,α,β,evaporationCoeff,q,antCount,iterations) -> None:
         if(self.coords == []):
             return
-        for i in range(iterations):
+        # for i in range(iterations):
+        self.running = True
+        while(self.running):
             bestRoute,bestCost = self.tsp.iterate(α,β,evaporationCoeff,q,antCount)
             self.updateGraph(bestRoute,self.graph)
-            self.progressBarLabel((i/iterations))
-            self.costLabel.config(text="ACO Cost: "+str(bestCost))
+            # self.progressBarLabel((i/iterations))
+            self.cost.setText(text="ACO Cost: "+str(math.floor(bestCost)))
         self.updateGraph(bestRoute,self.graph)
 
     def updateGraph(self,route,graph):
@@ -184,14 +196,7 @@ class TSPFrame(tk.Frame):
     def runSolver(self) -> None:
         bestRoute,bestCost = self.tsp.useSolver()
         self.updateGraph(bestRoute,self.solverGraph)
-        self.solverCostLabel.config(text="Solver Cost: "+str(bestCost))
-
-    # def updateSolverGraph(self,route):
-    #     self.solverGraph.clear()
-    #     for r in range(len(route)-1):
-    #         node = route[r]
-    #         self.solverGraph.add_node(node,pos=(self.coords[node][1], self.coords[node][0]))
-    #         self.solverGraph.add_edge(node, route[r+1])
+        self.solverCost.setText(text="Solver Cost: "+str(math.floor(bestCost)))
 
     def progressBarLabel(self,data:float,string:str="") -> None:
         '''
