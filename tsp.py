@@ -25,7 +25,7 @@ class TSP:
         tauChange = np.zeros(self.distMat.shape)
         for a in range(antCount):
             ants.append(Ant(nodes=list(range(self.distMat.size)),alpha=alpha,beta=beta))
-        for a, ant in enumerate(ants):
+        for ant in ants:
             ant.move(self.tau,self.distMat)
             if(ant.cost < self.bestCost):
                 self.bestCost = ant.cost
