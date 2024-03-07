@@ -25,15 +25,22 @@ class TSP:
         tauChange = np.zeros(self.distMat.shape)
         for a in range(antCount):
             ants.append(Ant(nodes=list(range(self.distMat.size)),alpha=alpha,beta=beta))
+        roundBestRoute = []
+        roundBestCost = float('inf')
         for ant in ants:
             ant.move(self.tau,self.distMat)
             if(ant.cost < self.bestCost):
                 self.bestCost = ant.cost
                 self.bestRoute = ant.route
-            for r in range(len(ant.route)-1):
-                tauChange[ant.route[r]][ant.route[r+1]] += q / ant.cost
-            self.tau += tauChange / antCount
-            tauChange = np.zeros(self.distMat.shape)
+            if(ant.cost < roundBestCost):
+                roundBestCost = ant.cost
+                roundBestRoute = ant.route
+        for r in range(len(self.bestRoute)-1):
+            tauChange[self.bestRoute[r]][self.bestRoute[r+1]] += q / self.bestCost
+        for r in range(len(roundBestRoute)-1):
+            tauChange[roundBestRoute[r]][roundBestRoute[r+1]] += q / roundBestCost
+        self.tau += tauChange / 2
+        tauChange = np.zeros(self.distMat.shape)
         self.tau *= (1-evaporationCoeff)
         return self.bestRoute,self.bestCost
 
