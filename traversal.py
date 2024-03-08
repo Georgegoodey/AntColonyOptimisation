@@ -1,3 +1,7 @@
+import numpy as np
+
+from ant import AntTraverse
+
 def mainTraversal() -> None:
     # adjMat  =  [[0,1,2,0],[1,0,0,1],[2,0,0,2],[0,1,2,0]]
     adjMat = [
