@@ -10,18 +10,22 @@ class FrameObject(ctk.CTkFrame):
     # frame: ctk.CTkFrame
     label: ctk.CTkLabel
 
-    def __init__(self, master, type, text="", val=0, size=None, steps=None):
+    def __init__(self, master, type, text="", val=0, size=None, steps=None, fontType="tsp"):
         ctk.CTkFrame.__init__(self, master=master)
+
+        fontStyle = font=("Bahnschrift", 15)
+        if(fontType=="sim"):
+            fontStyle = font=("Bahnschrift", 15)
 
         label_width = 400
         if(type == "label"):
             label_width = 600
         
-        self.label = ctk.CTkLabel(master=self, text=text, width=label_width)
+        self.label = ctk.CTkLabel(master=self, text=text, width=label_width,font=fontStyle)
         self.label.pack(side=tk.LEFT)
 
         if(type == "entry"):
-            self.val = ctk.CTkEntry(master=self, width=200)
+            self.val = ctk.CTkEntry(master=self, width=200,font=fontStyle)
             self.val.insert(0,val)
             self.val.pack(side=tk.RIGHT)
         elif(type == "scale"):
@@ -51,6 +55,11 @@ class GraphObject(Figure):
         self.canvas.get_tk_widget().pack()
 
         self.graph = nx.Graph()
+
+    def initGraph(self,coords):
+        self.graph.clear()
+        for node in coords:
+            self.graph.add_node(node,pos=(node[1], node[0]))
 
     def updateGraph(self,route,coords):
         self.graph.clear()

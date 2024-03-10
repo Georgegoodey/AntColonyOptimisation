@@ -19,8 +19,47 @@ class InfoFrame(ctk.CTkFrame):
 
     def __init__(self, master):
         ctk.CTkFrame.__init__(self, master)
-        label = ctk.CTkLabel(self, text="Ant Colony Optimisation", font=("Helvetica", 18))
-        label.pack(side="top", fill="x", pady=10)
+        label = ctk.CTkLabel(self, text="Ant Colony Optimisation", font=("Tw Cen MT", 50))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="This is a project using the Ant Colony Optimisation algorithm to solve travelling salesperson problems and simulate an ant colony", font=("Tw Cen MT", 20))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="It is intended to show how parameters affect the algorithm and hopefully give an understanding of how it works", font=("Tw Cen MT", 20))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="Travelling Salesperson Problem", font=("Bahnschrift", 30))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="This problem is about finding the shortest route around every point in a graph, this can be done using ACO to simulate ants travelling and just like real ants will eventually settle into a shortest route", font=("Bahnschrift", 16))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="There are a few parameters that can be changed and they'll be explained here to keep the UI clean so switch to the other when you're ready", font=("Bahnschrift", 16))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="Ant Count", font=("Bahnschrift", 18))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="This is the number of virtual ants running around the simulation, more ants mean more paths may be explored each pass but will increase the runtime as well", font=("Bahnschrift", 14))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="Pheromone Impact", font=("Bahnschrift", 18))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="How much the ants are affected by the pheromones they've laid, can encourage exploration when higher but will reinforce known paths too", font=("Bahnschrift", 14))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="Proximity Impact", font=("Bahnschrift", 18))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="How much the ants are affected by the distance to the next node when choosing a route, higher values give greedier solutions", font=("Bahnschrift", 14))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="Evaporation", font=("Bahnschrift", 18))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="This is how quickly the pheromones will evaporate, default is 10% per pass, increasing this forgets known routes faster but encourages exploration", font=("Bahnschrift", 14))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
 
     def menuBar(self,root):
         menuBar = tk.Menu(root)
@@ -33,8 +72,11 @@ class TSPFrame(ctk.CTkFrame):
 
         titleFrame = ctk.CTkFrame(master=self, width=1000)
 
-        label = ctk.CTkLabel(master=titleFrame, text="Travelling Salesman using ACO")
-        label.pack(side=tk.BOTTOM, pady=10)
+        label = ctk.CTkLabel(master=titleFrame, text="Travelling Salesperson Problem Solver", font=("Bahnschrift", 30))
+        label.pack(pady=5)
+
+        label = ctk.CTkLabel(master=titleFrame, text="Uses an Ant Colony Optimisation Solver with Google's ORTools Solver for Comparison", font=("Bahnschrift", 15))
+        label.pack(pady=5)
 
         titleFrame.pack(side=tk.TOP, fill=tk.X)
         
@@ -47,20 +89,27 @@ class TSPFrame(ctk.CTkFrame):
 
     def openFileBrowser(self):
         filepath = filedialog.askopenfilename(initialdir="./",title="Select a File", filetypes=(("TSP files", "*.tsp"), ("All files", "*.*")))
-        file = self.loader.loadFile(filepath=filepath)
-        self.coords = file[0]
-        self.edges = file[1]
-        self.tour = file[2]
-        if(self.coords):
-            self.tsp = TSP(coords=self.coords)
-        elif(self.edges):
-            self.tsp = TSP(matrix=self.edges)
-        if(self.tour):
-            self.tour.append(self.tour[0])
-            self.solutionGraph.updateGraph(self.tour,self.coords)
-            self.solutionGraph.drawGraph()
-            cost = self.tsp.getCost(self.tour)
-            self.solutionCost.setText(text="File Solution Cost: "+str(math.floor(cost)))
+        if(filepath):
+            file = self.loader.loadFile(filepath=filepath)
+            self.coords = file[0]
+            self.edges = file[1]
+            self.tour = file[2]
+            if(self.coords):
+                self.tsp = TSP(coords=self.coords)
+                self.graph.initGraph(self.coords)
+                self.graph.drawGraph()
+                self.solverGraph.initGraph(self.coords)
+                self.solverGraph.drawGraph()
+                self.solutionGraph.initGraph(self.coords)
+                self.solutionGraph.drawGraph()
+            elif(self.edges):
+                self.tsp = TSP(matrix=self.edges)
+            if(self.tour):
+                self.tour.append(self.tour[0])
+                self.solutionGraph.updateGraph(self.tour,self.coords)
+                self.solutionGraph.drawGraph()
+                cost = self.tsp.getCost(self.tour)
+                self.solutionCost.configure(text="File Solution Cost: "+str(math.floor(cost)))
 
     def menuBar(self,root):
         menuBar = tk.Menu(root)
@@ -75,23 +124,26 @@ class TSPFrame(ctk.CTkFrame):
 
         menuFrame = ctk.CTkFrame(master=widgetFrame)
 
-        load = ctk.CTkButton(master=menuFrame,command=self.openFileBrowser)
-        load.pack()
+        load = ctk.CTkButton(master=menuFrame,text="Load Problem",command=self.openFileBrowser, font=("Bahnschrift", 15))
+        load.pack(pady=10, padx=10)
 
-        count = FrameObject(master=menuFrame,type="entry",text="How many ants: ",val="30")
-        count.pack()
+        # Add file info
 
+        count = FrameObject(master=menuFrame,type="entry",text="Ant Count",val="30")
+        count.pack(pady=10, padx=10)
+
+        # Possibly bring back iterations as a toggle
         iterations = FrameObject(master=menuFrame,type="entry",text="How many iterations: ",val="30")
-        iterations.pack()
+        # iterations.pack()
 
-        alpha = FrameObject(master=menuFrame,type="scale",text="Value of pheromone impact: ",val=1,size=(0,2),steps=20)
-        alpha.pack()
+        alpha = FrameObject(master=menuFrame,type="scale",text="Pheromone impact",val=1,size=(0,2),steps=20)
+        alpha.pack(pady=10, padx=10)
 
-        beta = FrameObject(master=menuFrame,type="scale",text="Value of proximity impact: ",val=2,size=(0,4),steps=40)
-        beta.pack()
+        beta = FrameObject(master=menuFrame,type="scale",text="Proximity impact",val=2,size=(0,4),steps=40)
+        beta.pack(pady=10, padx=10)
 
-        evap = FrameObject(master=menuFrame,type="scale",text="Evaporation Coefficient: ",val=0.1,size=(0,1))
-        evap.pack()
+        evap = FrameObject(master=menuFrame,type="scale",text="Evaporation",val=0.1,size=(0,1))
+        evap.pack(pady=10, padx=10)
 
         acoFrame =  ctk.CTkFrame(master=menuFrame)
 
@@ -99,7 +151,8 @@ class TSPFrame(ctk.CTkFrame):
             master=acoFrame,
             text="Start ACO", 
             width=25, 
-            command=lambda:self.runThread(alpha.get(),beta.get(),evap.get(),1,int(count.get()),int(iterations.get()))
+            command=lambda:self.runThread(alpha.get(),beta.get(),evap.get(),1,int(count.get()),int(iterations.get())),
+            font=("Bahnschrift", 15)
         )
         self.startButton.pack()
 
@@ -107,27 +160,30 @@ class TSPFrame(ctk.CTkFrame):
             master=acoFrame,
             text="Stop", 
             width=25, 
-            command=self.stopRunning
+            command=self.stopRunning,
+            font=("Bahnschrift", 15)
         )
 
-        acoFrame.pack()
+        acoFrame.pack(pady=10, padx=10)
 
         solverButton = ctk.CTkButton(
             master=menuFrame,
             text="Run Solver", 
             width=25, 
-            command=self.runSolver
+            command=self.runSolver,
+            font=("Bahnschrift", 15)
         )
-        solverButton.pack()
+        solverButton.pack(pady=10, padx=10)
         
-        menuFrame.pack(side=tk.LEFT)
+        menuFrame.pack(side=tk.LEFT, pady=10, padx=10)
 
-        displayFrame = ctk.CTkFrame(master=widgetFrame)     
+        displayFrame = ctk.CTkFrame(master=widgetFrame)
 
         graphView = ctk.CTkTabview(master=displayFrame)
         graphView.add("ACO Graph")
         graphView.add("Solver Graph")
         graphView.add("Solution Graph")
+        graphView._segmented_button.configure(font=("Bahnschrift", 15))
 
         self.graph = GraphObject(master=graphView.tab("ACO Graph"),colour="#CC6600")
         self.graph.redrawGraph()
@@ -138,16 +194,29 @@ class TSPFrame(ctk.CTkFrame):
         self.solutionGraph = GraphObject(master=graphView.tab("Solution Graph"),colour="#66FF33")
         self.solutionGraph.drawGraph()
 
-        graphView.pack()
+        graphView.pack(side=tk.TOP, pady=10, padx=10)
 
-        self.cost = FrameObject(master=displayFrame,type="label",text="ACO Cost: 0")
-        self.cost.pack()
+        statsFrame = ctk.CTkFrame(master=displayFrame, width=1000)
 
-        self.solverCost = FrameObject(master=displayFrame,type="label",text="Solver Cost: 0")
-        self.solverCost.pack()
+        self.cost = ctk.CTkLabel(master=statsFrame, text="ACO Cost: 0", font=("Bahnschrift", 15))
+        self.cost.pack(pady=10)
 
-        self.solutionCost = FrameObject(master=displayFrame,type="label",text="File Solution Cost: 0")
-        self.solutionCost.pack()
+        self.solverCost = ctk.CTkLabel(master=statsFrame, text="Solver Cost: 0", font=("Bahnschrift", 15))
+        self.solverCost.pack(pady=10)
+
+        self.solutionCost = ctk.CTkLabel(master=statsFrame, text="File Solution Cost: 0", font=("Bahnschrift", 15))
+        self.solutionCost.pack(pady=10)
+
+        # self.cost = FrameObject(master=displayFrame,type="label",text="ACO Cost: 0")
+        # self.cost.pack()
+
+        # self.solverCost = FrameObject(master=displayFrame,type="label",text="Solver Cost: 0")
+        # self.solverCost.pack()
+
+        # self.solutionCost = FrameObject(master=displayFrame,type="label",text="File Solution Cost: 0")
+        # self.solutionCost.pack()
+
+        statsFrame.pack(side=tk.BOTTOM, fill=tk.X, pady=10, padx=10)
 
         displayFrame.pack(side=tk.RIGHT)
 
@@ -172,8 +241,7 @@ class TSPFrame(ctk.CTkFrame):
             bestRoute,bestCost = self.tsp.iterate(α,β,evaporationCoeff,q,antCount)
             bestCost = self.tsp.getCost(bestRoute)
             self.graph.updateGraph(bestRoute,self.coords)
-            self.cost.setText(text="ACO Cost: "+str(math.floor(bestCost)))
-        print("Loop finished")
+            self.cost.configure(text="ACO Cost: "+str(math.floor(bestCost)))
         self.graph.updateGraph(bestRoute,self.coords)
 
     def runSolver(self) -> None:
@@ -181,7 +249,7 @@ class TSPFrame(ctk.CTkFrame):
         bestCost = self.tsp.getCost(bestRoute)
         self.solverGraph.updateGraph(bestRoute,self.coords)
         self.solverGraph.drawGraph()
-        self.solverCost.setText(text="Solver Cost: "+str(math.floor(bestCost)))
+        self.solverCost.configure(text="Solver Cost: "+str(math.floor(bestCost)))
 
     def progressBarLabel(self,data:float,string:str="") -> None:
         '''

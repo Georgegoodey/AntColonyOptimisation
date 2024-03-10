@@ -12,6 +12,7 @@ class App(ctk.CTk):
         super().__init__()
 
         self.geometry("1920x1080")
+        self.title("Ant Colony Optimisation")
 
         self.fs = False
         self.bind("<F11>", self.toggleFullscreen)
@@ -54,4 +55,4 @@ class App(ctk.CTk):
 if __name__ == "__main__":
     app = App()
     app.mainloop()
-    print("App finished")
+    # print("App finished")
