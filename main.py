@@ -5,7 +5,7 @@ import threading
 
 from ant import Ant,AntSim
 from pheromone_matrix import PMat
-from frames import StartFrame,TSPFrame,SimFrame
+from frames import InfoFrame,TSPFrame,SimFrame
 
 class App(ctk.CTk):
     def __init__(self) -> None:
@@ -13,27 +13,25 @@ class App(ctk.CTk):
 
         self.geometry("1920x1080")
 
-        # self.attributes('-fullscreen', True)
-        # self.state('zoomed') 
-
         self.fs = False
         self.bind("<F11>", self.toggleFullscreen)
         self.bind("<Escape>", self.endFullscreen)
 
-        container = ctk.CTkFrame(self)
-        container.pack(side="top", fill="both", expand=True)
-        container.grid_rowconfigure(0, weight=1)
-        container.grid_columnconfigure(0, weight=1)
+        mainView = ctk.CTkTabview(master=self)
+        mainView.add("Info")
+        mainView.add("Graphs")
+        mainView.add("Simulation")
 
-        self.frames = {}
-        for F in (StartFrame,TSPFrame,SimFrame):
-            page_name = F.__name__
-            frame = F(parent=container, controller=self)
-            self.frames[page_name] = frame
+        infoFrame = InfoFrame(master=mainView.tab("Info"))
+        infoFrame.pack()
 
-            frame.grid(row=0, column=0, sticky="nsew")
+        graphFrame = TSPFrame(master=mainView.tab("Graphs"))
+        graphFrame.pack()
 
-        self.showFrame("StartFrame")
+        simFrame = SimFrame(master=mainView.tab("Simulation"))
+        simFrame.pack()
+
+        mainView.pack()
 
     def showFrame(self, page_name):
         '''

@@ -9,26 +9,18 @@ from tkinter import filedialog
 from matplotlib.figure import Figure 
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg) 
 
-from tkinter_objects import FrameObject
+from tkinter_objects import FrameObject,GraphObject
 from file_loader import Loader
 from tsp import TSP
 from pheromone_matrix import PMat
 from ant import AntSim
 
-class StartFrame(ctk.CTkFrame):
+class InfoFrame(ctk.CTkFrame):
 
-    def __init__(self, parent, controller):
-        ctk.CTkFrame.__init__(self, parent)
-        self.controller = controller
-        label = ctk.CTkLabel(self, text="Ant Colony Optimisation")
+    def __init__(self, master):
+        ctk.CTkFrame.__init__(self, master)
+        label = ctk.CTkLabel(self, text="Ant Colony Optimisation", font=("Helvetica", 18))
         label.pack(side="top", fill="x", pady=10)
-
-        tspButton = ctk.CTkButton(self, text="Travelling Salesman Implementation",
-                            command=lambda: controller.showFrame("TSPFrame"))
-        simButton = ctk.CTkButton(self, text="ACO Simulation",
-                            command=lambda: controller.showFrame("SimFrame"))
-        tspButton.pack()
-        simButton.pack()
 
     def menuBar(self,root):
         menuBar = tk.Menu(root)
@@ -36,17 +28,13 @@ class StartFrame(ctk.CTkFrame):
 
 class TSPFrame(ctk.CTkFrame):
 
-    def __init__(self, parent, controller):
-        ctk.CTkFrame.__init__(self, parent)
-        self.controller = controller
+    def __init__(self, master):
+        ctk.CTkFrame.__init__(self, master)
 
         titleFrame = ctk.CTkFrame(master=self, width=1000)
 
         label = ctk.CTkLabel(master=titleFrame, text="Travelling Salesman using ACO")
         label.pack(side=tk.BOTTOM, pady=10)
-
-        self.returnButton = ctk.CTkButton(master=titleFrame, text="Return to Main Menu",command=lambda: controller.showFrame("StartFrame"))
-        self.returnButton.pack(side=tk.LEFT)
 
         titleFrame.pack(side=tk.TOP, fill=tk.X)
         
@@ -57,9 +45,7 @@ class TSPFrame(ctk.CTkFrame):
 
         self.createWidgets()
 
-        self.after(0, self.redrawGraph)
-
-    def open_file_browser(self):
+    def openFileBrowser(self):
         filepath = filedialog.askopenfilename(initialdir="./",title="Select a File", filetypes=(("TSP files", "*.tsp"), ("All files", "*.*")))
         file = self.loader.loadFile(filepath=filepath)
         self.coords = file[0]
@@ -69,19 +55,17 @@ class TSPFrame(ctk.CTkFrame):
             self.tsp = TSP(coords=self.coords)
         elif(self.edges):
             self.tsp = TSP(matrix=self.edges)
-        self.graph = nx.Graph()
-        self.solverGraph = nx.Graph()
-        self.solutionGraph = nx.Graph()
         if(self.tour):
             self.tour.append(self.tour[0])
-            self.updateGraph(self.tour,self.solutionGraph)
+            self.solutionGraph.updateGraph(self.tour,self.coords)
+            self.solutionGraph.drawGraph()
             cost = self.tsp.getCost(self.tour)
             self.solutionCost.setText(text="File Solution Cost: "+str(math.floor(cost)))
 
     def menuBar(self,root):
         menuBar = tk.Menu(root)
         fileMenu = tk.Menu(menuBar, tearoff=0)
-        fileMenu.add_command(label="Open", command=self.open_file_browser)
+        fileMenu.add_command(label="Open", command=self.openFileBrowser)
         menuBar.add_cascade(label="File", menu=fileMenu)
         return menuBar
 
@@ -90,6 +74,9 @@ class TSPFrame(ctk.CTkFrame):
         widgetFrame = ctk.CTkFrame(master=self)
 
         menuFrame = ctk.CTkFrame(master=widgetFrame)
+
+        load = ctk.CTkButton(master=menuFrame,command=self.openFileBrowser)
+        load.pack()
 
         count = FrameObject(master=menuFrame,type="entry",text="How many ants: ",val="30")
         count.pack()
@@ -132,33 +119,26 @@ class TSPFrame(ctk.CTkFrame):
             command=self.runSolver
         )
         solverButton.pack()
-
-        # self.progressFrame = ctk.CTkFrame(master=menuFrame)
-
-        # self.progressLabel = ctk.CTkLabel(master=self.progressFrame, text="", width=60)
-        # self.progressLabel.pack(side=tk.LEFT)
-        # self.progressBarLabel(0)
-
-        # self.progressFrame.pack()
-
-        # self.progressBar = ctk.CTkProgressBar(master=menuFrame)
         
         menuFrame.pack(side=tk.LEFT)
 
         displayFrame = ctk.CTkFrame(master=widgetFrame)     
 
-        self.fig = Figure(figsize = (15, 10), dpi = 100) 
+        graphView = ctk.CTkTabview(master=displayFrame)
+        graphView.add("ACO Graph")
+        graphView.add("Solver Graph")
+        graphView.add("Solution Graph")
 
-        self.canvas = FigureCanvasTkAgg(self.fig,master=displayFrame)
-        self.canvas.draw() 
+        self.graph = GraphObject(master=graphView.tab("ACO Graph"),colour="#CC6600")
+        self.graph.redrawGraph()
 
-        self.canvas.get_tk_widget().pack(side=tk.TOP,fill=tk.BOTH)
+        self.solverGraph = GraphObject(master=graphView.tab("Solver Graph"),colour="#0099CC")
+        self.solverGraph.drawGraph()
 
-        self.graph = nx.Graph()
+        self.solutionGraph = GraphObject(master=graphView.tab("Solution Graph"),colour="#66FF33")
+        self.solutionGraph.drawGraph()
 
-        self.solverGraph = nx.Graph()
-
-        self.solutionGraph = nx.Graph()
+        graphView.pack()
 
         self.cost = FrameObject(master=displayFrame,type="label",text="ACO Cost: 0")
         self.cost.pack()
@@ -187,41 +167,20 @@ class TSPFrame(ctk.CTkFrame):
         self.startButton.pack_forget()
         if(self.coords == []):
             return
-        # for i in range(iterations):
         self.running = True
         while(self.running):
             bestRoute,bestCost = self.tsp.iterate(α,β,evaporationCoeff,q,antCount)
             bestCost = self.tsp.getCost(bestRoute)
-            self.updateGraph(bestRoute,self.graph)
-            # self.progressBarLabel((i/iterations))
+            self.graph.updateGraph(bestRoute,self.coords)
             self.cost.setText(text="ACO Cost: "+str(math.floor(bestCost)))
         print("Loop finished")
-        self.updateGraph(bestRoute,self.graph)
-
-    def updateGraph(self,route,graph):
-        graph.clear()
-        for r in range(len(route)-1):
-            node = route[r]
-            graph.add_node(node,pos=(self.coords[node][1], self.coords[node][0]))
-            graph.add_edge(node, route[r+1])
-
-    def redrawGraph(self): 
-        self.fig.clf()
-        plot1 = self.fig.add_subplot(111)
-
-        pos = {node: coords for node, coords in nx.get_node_attributes(self.graph, "pos").items()}
-        nx.draw(self.graph, pos, with_labels=False, node_size=50, node_color="#CC6600", ax=plot1)
-        pos = {node: coords for node, coords in nx.get_node_attributes(self.solverGraph, "pos").items()}
-        nx.draw(self.solverGraph, pos, with_labels=False, node_size=50, edge_color="#0099CC", ax=plot1)
-        pos = {node: coords for node, coords in nx.get_node_attributes(self.solutionGraph, "pos").items()}
-        nx.draw(self.solutionGraph, pos, with_labels=False, node_size=50, edge_color="#66FF33", ax=plot1)
-        self.canvas.draw()
-        self.after(100,self.redrawGraph)
+        self.graph.updateGraph(bestRoute,self.coords)
 
     def runSolver(self) -> None:
         bestRoute,bestCost = self.tsp.useSolver()
         bestCost = self.tsp.getCost(bestRoute)
-        self.updateGraph(bestRoute,self.solverGraph)
+        self.solverGraph.updateGraph(bestRoute,self.coords)
+        self.solverGraph.drawGraph()
         self.solverCost.setText(text="Solver Cost: "+str(math.floor(bestCost)))
 
     def progressBarLabel(self,data:float,string:str="") -> None:
@@ -237,9 +196,8 @@ class TSPFrame(ctk.CTkFrame):
         self.progressLabel.configure(text=string+"Training Progress: "+("█"*(percentOver4))+("▒"*(25-percentOver4)))#+str(percent)+"% "
 
 class SimFrame(ctk.CTkFrame):
-    def __init__(self, parent, controller):
-        ctk.CTkFrame.__init__(self, parent)
-        self.controller = controller
+    def __init__(self, master):
+        ctk.CTkFrame.__init__(self, master)
 
         label = ctk.CTkLabel(self, text="Virtual Simulation using ACO")
         label.pack(side="top", fill="x", pady=10)
@@ -250,17 +208,14 @@ class SimFrame(ctk.CTkFrame):
 
         self.createWidgets()
 
-        self.returnButton = ctk.CTkButton(master=self, text="Return to the main menu",command=lambda: controller.showFrame("StartFrame"))
-        self.returnButton.pack()
-
     def menuBar(self,root):
         menuBar = tk.Menu(root)
         fileMenu = tk.Menu(menuBar, tearoff=0)
-        fileMenu.add_command(label="Open", command=self.open_file_browser)
+        fileMenu.add_command(label="Open", command=self.openFileBrowser)
         menuBar.add_cascade(label="File", menu=fileMenu)
         return menuBar
     
-    def open_file_browser(self):
+    def openFileBrowser(self):
         filepath = filedialog.askopenfilename(initialdir="./",title="Select a File", filetypes=(("PNG files", "*.png"), ("All files", "*.*")))
         if(filepath):
             self.loadSim(filename=filepath)
