@@ -1,4 +1,5 @@
 import tkinter as tk
+import customtkinter as ctk
 import networkx as nx
 import threading
 import numpy as np
@@ -14,17 +15,17 @@ from tsp import TSP
 from pheromone_matrix import PMat
 from ant import AntSim
 
-class StartFrame(tk.Frame):
+class StartFrame(ctk.CTkFrame):
 
     def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
+        ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
-        label = tk.Label(self, text="Ant Colony Optimisation")
+        label = ctk.CTkLabel(self, text="Ant Colony Optimisation")
         label.pack(side="top", fill="x", pady=10)
 
-        tspButton = tk.Button(self, text="Travelling Salesman Implementation",
+        tspButton = ctk.CTkButton(self, text="Travelling Salesman Implementation",
                             command=lambda: controller.showFrame("TSPFrame"))
-        simButton = tk.Button(self, text="ACO Simulation",
+        simButton = ctk.CTkButton(self, text="ACO Simulation",
                             command=lambda: controller.showFrame("SimFrame"))
         tspButton.pack()
         simButton.pack()
@@ -33,18 +34,18 @@ class StartFrame(tk.Frame):
         menuBar = tk.Menu(root)
         return menuBar
 
-class TSPFrame(tk.Frame):
+class TSPFrame(ctk.CTkFrame):
 
     def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
+        ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
 
-        titleFrame = tk.Frame(master=self, width=1000)
+        titleFrame = ctk.CTkFrame(master=self, width=1000)
 
-        label = tk.Label(master=titleFrame, text="Travelling Salesman using ACO")
+        label = ctk.CTkLabel(master=titleFrame, text="Travelling Salesman using ACO")
         label.pack(side=tk.BOTTOM, pady=10)
 
-        self.returnButton = tk.Button(master=titleFrame, text="Return to Main Menu",command=lambda: controller.showFrame("StartFrame"))
+        self.returnButton = ctk.CTkButton(master=titleFrame, text="Return to Main Menu",command=lambda: controller.showFrame("StartFrame"))
         self.returnButton.pack(side=tk.LEFT)
 
         titleFrame.pack(side=tk.TOP, fill=tk.X)
@@ -86,23 +87,28 @@ class TSPFrame(tk.Frame):
 
     def createWidgets(self):
 
-        widgetFrame = tk.Frame(master=self)
+        widgetFrame = ctk.CTkFrame(master=self)
 
-        menuFrame = tk.Frame(master=widgetFrame)
+        menuFrame = ctk.CTkFrame(master=widgetFrame)
 
         count = FrameObject(master=menuFrame,type="entry",text="How many ants: ",val="30")
+        count.pack()
 
         iterations = FrameObject(master=menuFrame,type="entry",text="How many iterations: ",val="30")
+        iterations.pack()
 
-        alpha = FrameObject(master=menuFrame,type="scale",text="Value of pheromone impact: ",val=1,size=(0,2),resolution=0.1)
+        alpha = FrameObject(master=menuFrame,type="scale",text="Value of pheromone impact: ",val=1,size=(0,2),steps=20)
+        alpha.pack()
 
-        beta = FrameObject(master=menuFrame,type="scale",text="Value of proximity impact: ",val=2,size=(0,4),resolution=0.1)
+        beta = FrameObject(master=menuFrame,type="scale",text="Value of proximity impact: ",val=2,size=(0,4),steps=40)
+        beta.pack()
 
-        evap = FrameObject(master=menuFrame,type="scale",text="Evaporation Coefficient: ",val=0.1,size=(0,1),resolution=0.01)
+        evap = FrameObject(master=menuFrame,type="scale",text="Evaporation Coefficient: ",val=0.1,size=(0,1))
+        evap.pack()
 
-        acoFrame =  tk.Frame(master=menuFrame)
+        acoFrame =  ctk.CTkFrame(master=menuFrame)
 
-        self.startButton = tk.Button(
+        self.startButton = ctk.CTkButton(
             master=acoFrame,
             text="Start ACO", 
             width=25, 
@@ -110,7 +116,7 @@ class TSPFrame(tk.Frame):
         )
         self.startButton.pack()
 
-        self.stopButton = tk.Button(
+        self.stopButton = ctk.CTkButton(
             master=acoFrame,
             text="Stop", 
             width=25, 
@@ -119,43 +125,51 @@ class TSPFrame(tk.Frame):
 
         acoFrame.pack()
 
-        solverButton = tk.Button(
+        solverButton = ctk.CTkButton(
             master=menuFrame,
             text="Run Solver", 
             width=25, 
-            command=lambda:self.runSolver()
+            command=self.runSolver
         )
         solverButton.pack()
 
-        self.progressFrame = tk.Frame(master=menuFrame)
+        # self.progressFrame = ctk.CTkFrame(master=menuFrame)
 
-        self.progressLabel = tk.Label(master=self.progressFrame, text="", width=60)
-        self.progressLabel.pack(side=tk.LEFT)
-        self.progressBarLabel(0)
+        # self.progressLabel = ctk.CTkLabel(master=self.progressFrame, text="", width=60)
+        # self.progressLabel.pack(side=tk.LEFT)
+        # self.progressBarLabel(0)
 
-        self.progressFrame.pack()
+        # self.progressFrame.pack()
 
-        self.cost = FrameObject(master=menuFrame,type="label",text="ACO Cost: 0")
-
-        self.solverCost = FrameObject(master=menuFrame,type="label",text="Solver Cost: 0")
-
-        self.solutionCost = FrameObject(master=menuFrame,type="label",text="File Solution Cost: 0")
-
+        # self.progressBar = ctk.CTkProgressBar(master=menuFrame)
+        
         menuFrame.pack(side=tk.LEFT)
 
-        self.fig = Figure(figsize = (4, 4), dpi = 100) 
+        displayFrame = ctk.CTkFrame(master=widgetFrame)     
 
-        # Trying to make this scale
-        self.canvas = FigureCanvasTkAgg(self.fig,master=widgetFrame)
+        self.fig = Figure(figsize = (15, 10), dpi = 100) 
+
+        self.canvas = FigureCanvasTkAgg(self.fig,master=displayFrame)
         self.canvas.draw() 
 
-        self.canvas.get_tk_widget().pack(side=tk.RIGHT,fill=tk.BOTH)
+        self.canvas.get_tk_widget().pack(side=tk.TOP,fill=tk.BOTH)
 
         self.graph = nx.Graph()
 
         self.solverGraph = nx.Graph()
 
         self.solutionGraph = nx.Graph()
+
+        self.cost = FrameObject(master=displayFrame,type="label",text="ACO Cost: 0")
+        self.cost.pack()
+
+        self.solverCost = FrameObject(master=displayFrame,type="label",text="Solver Cost: 0")
+        self.solverCost.pack()
+
+        self.solutionCost = FrameObject(master=displayFrame,type="label",text="File Solution Cost: 0")
+        self.solutionCost.pack()
+
+        displayFrame.pack(side=tk.RIGHT)
 
         widgetFrame.pack(fill=tk.BOTH)
 
@@ -220,14 +234,14 @@ class TSPFrame(tk.Frame):
         # Calculates half the percentage, this provides only 50 characters and a less excessive progress bar
         percentOver4 = int(percent/4)
         # Prints out the progress bar, ending in an escape character "\r" so that it keeps printing on the same line everytime
-        self.progressLabel.config(text=string+"Training Progress: "+("█"*(percentOver4))+("▒"*(25-percentOver4)))#+str(percent)+"% "
+        self.progressLabel.configure(text=string+"Training Progress: "+("█"*(percentOver4))+("▒"*(25-percentOver4)))#+str(percent)+"% "
 
-class SimFrame(tk.Frame):
+class SimFrame(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
+        ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
 
-        label = tk.Label(self, text="Virtual Simulation using ACO")
+        label = ctk.CTkLabel(self, text="Virtual Simulation using ACO")
         label.pack(side="top", fill="x", pady=10)
 
         self.foodTau = None
@@ -236,7 +250,7 @@ class SimFrame(tk.Frame):
 
         self.createWidgets()
 
-        self.returnButton = tk.Button(master=self, text="Return to the main menu",command=lambda: controller.showFrame("StartFrame"))
+        self.returnButton = ctk.CTkButton(master=self, text="Return to the main menu",command=lambda: controller.showFrame("StartFrame"))
         self.returnButton.pack()
 
     def menuBar(self,root):
@@ -257,12 +271,12 @@ class SimFrame(tk.Frame):
         
         self.SIMWIDTH = 64
         
-        self.canvas = tk.Canvas(self, width=self.WIDTH, height=self.HEIGHT, bg="#000000")
+        self.canvas = ctk.CTkCanvas(self, width=self.WIDTH, height=self.HEIGHT, bg="#000000")
         self.canvas.pack()
 
-        alphaFrame = tk.Frame(master=self)
+        alphaFrame = ctk.CTkFrame(master=self)
 
-        alphaLabel = tk.Label(master=alphaFrame, text="Value of pheromone impact: ", width=40)
+        alphaLabel = ctk.CTkLabel(master=alphaFrame, text="Value of pheromone impact: ", width=40)
         alphaLabel.pack(side=tk.LEFT)
 
         alphaScale = tk.Scale(master=alphaFrame, from_=0, to=2, resolution=0.1, orient=tk.HORIZONTAL, tickinterval=1, width=20)
@@ -271,9 +285,9 @@ class SimFrame(tk.Frame):
 
         alphaFrame.pack()
 
-        betaFrame = tk.Frame(master=self)
+        betaFrame = ctk.CTkFrame(master=self)
 
-        betaLabel = tk.Label(master=betaFrame, text="Value of proximity impact: ", width=40)
+        betaLabel = ctk.CTkLabel(master=betaFrame, text="Value of proximity impact: ", width=40)
         betaLabel.pack(side=tk.LEFT)
 
         betaScale = tk.Scale(master=betaFrame, from_=0, to=4, resolution=0.1, orient=tk.HORIZONTAL, tickinterval=1, width=20)
@@ -282,9 +296,9 @@ class SimFrame(tk.Frame):
 
         betaFrame.pack()
 
-        evapFrame = tk.Frame(master=self)
+        evapFrame = ctk.CTkFrame(master=self)
 
-        evapLabel = tk.Label(master=evapFrame, text="Evaporation Coefficient: ", width=40)
+        evapLabel = ctk.CTkLabel(master=evapFrame, text="Evaporation Coefficient: ", width=40)
         evapLabel.pack(side=tk.LEFT)
 
         evapScale = tk.Scale(master=evapFrame, from_=0, to=0.5, resolution=0.01, orient=tk.HORIZONTAL, width=20)
@@ -293,7 +307,7 @@ class SimFrame(tk.Frame):
 
         evapFrame.pack()
 
-        startButton = tk.Button(
+        startButton = ctk.CTkButton(
             master=self,
             text="Run Sim", 
             width=25, 

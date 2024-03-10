@@ -1,29 +1,33 @@
 import tkinter as tk
+import customtkinter as ctk
 
-class FrameObject():
+class FrameObject(ctk.CTkFrame):
 
-    frame: tk.Frame
-    label: tk.Label
+    # frame: ctk.CTkFrame
+    label: ctk.CTkLabel
 
-    def __init__(self, master, type, text="", val=0, size=None, resolution=None):
-        self.frame = tk.Frame(master=master)
+    def __init__(self, master, type, text="", val=0, size=None, steps=None):
+        ctk.CTkFrame.__init__(self, master=master)
 
-        self.label = tk.Label(master=self.frame, text=text, width=40)
+        label_width = 400
+        if(type == "label"):
+            label_width = 600
+        
+        self.label = ctk.CTkLabel(master=self, text=text, width=label_width)
         self.label.pack(side=tk.LEFT)
 
         if(type == "entry"):
-            self.val = tk.Entry(master=self.frame, width=20)
+            self.val = ctk.CTkEntry(master=self, width=200)
             self.val.insert(0,val)
             self.val.pack(side=tk.RIGHT)
         elif(type == "scale"):
-            self.val = tk.Scale(master=self.frame, from_=size[0], to=size[1], resolution=resolution, orient=tk.HORIZONTAL, tickinterval=1, width=20)
+            # self.val = tk.Scale(master=self.frame, from_=size[0], to=size[1], resolution=resolution, orient=tk.HORIZONTAL, tickinterval=1, width=20)
+            self.val = ctk.CTkSlider(master=self, from_=size[0], to=size[1], width=200, number_of_steps=steps)
             self.val.set(val)
             self.val.pack(side=tk.RIGHT)
-
-        self.frame.pack()
 
     def get(self):
         return float(self.val.get())
 
     def setText(self, text=""):
-        self.label.config(text=text)
+        self.label.configure(text=text)

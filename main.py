@@ -1,14 +1,17 @@
 import numpy as np
 import tkinter as tk
+import customtkinter as ctk
 import threading
 
 from ant import Ant,AntSim
 from pheromone_matrix import PMat
 from frames import StartFrame,TSPFrame,SimFrame
 
-class App(tk.Tk):
-    def __init__(self,screenName:str|None=None,baseName:str|None=None,className:str="Tk",useTk:bool=True,sync:bool=False,use:str|None=None) -> None:
-        super().__init__(screenName, baseName, className, useTk, sync, use)
+class App(ctk.CTk):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.geometry("1920x1080")
 
         # self.attributes('-fullscreen', True)
         # self.state('zoomed') 
@@ -17,7 +20,7 @@ class App(tk.Tk):
         self.bind("<F11>", self.toggleFullscreen)
         self.bind("<Escape>", self.endFullscreen)
 
-        container = tk.Frame(self)
+        container = ctk.CTkFrame(self)
         container.pack(side="top", fill="both", expand=True)
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
@@ -39,8 +42,8 @@ class App(tk.Tk):
         frame = self.frames[page_name]
         frame.tkraise()
 
-        menuBar = frame.menuBar(self)
-        self.configure(menu=menuBar)
+        # menuBar = frame.menuBar(self)
+        # self.configure(menu=menuBar)
 
     def toggleFullscreen(self,even=None):
         self.fs = not self.fs
