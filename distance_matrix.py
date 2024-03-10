@@ -10,8 +10,11 @@ class Mat:
     shape: list[int]
     beta: float
 
-    def __init__(self, size:int) -> None:
-        self.content = [[0] * size for i in range(size)]
+    def __init__(self, size:int, content:list[list[float]]=None) -> None:
+        if(content):
+            self.content = content
+        else:
+            self.content = [[0] * size for i in range(size)]
         # self.content = np.array((size,size))
         self.size = size
         self.shape = [size,size]

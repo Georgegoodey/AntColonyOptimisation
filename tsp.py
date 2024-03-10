@@ -11,10 +11,12 @@ from pheromone_matrix import PMat
 
 class TSP:
 
-    def __init__(self, coords):
-        self.coords = coords
-        self.distMat = Mat(len(self.coords))
-        self.distMat.formDistMat(self.coords,"pythagoras")
+    def __init__(self, coords=None,matrix=None):
+        if(coords):
+            self.distMat = Mat(size=len(coords))
+            self.distMat.formDistMat(coords,"pythagoras")
+        elif(matrix):
+            self.distMat = Mat(size=len(matrix),content=matrix)
         self.tau = np.ones(self.distMat.shape)
         # Python version of infinitely high cost
         self.bestCost = float("inf")

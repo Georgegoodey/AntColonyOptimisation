@@ -62,13 +62,16 @@ class TSPFrame(tk.Frame):
         filepath = filedialog.askopenfilename(initialdir="./",title="Select a File", filetypes=(("TSP files", "*.tsp"), ("All files", "*.*")))
         file = self.loader.loadFile(filepath=filepath)
         self.coords = file[0]
+        self.edges = file[1]
+        self.tour = file[2]
         if(self.coords):
-            self.tsp = TSP(self.coords)
+            self.tsp = TSP(coords=self.coords)
+        elif(self.edges):
+            self.tsp = TSP(matrix=self.edges)
         self.graph = nx.Graph()
         self.solverGraph = nx.Graph()
         self.solutionGraph = nx.Graph()
-        if(file[1] != None):
-            self.tour = file[1]
+        if(self.tour):
             self.tour.append(self.tour[0])
             self.updateGraph(self.tour,self.solutionGraph)
             cost = self.tsp.getCost(self.tour)

@@ -75,22 +75,39 @@ def loadTSP(filename:str):
         lines = tspFile.readlines()
     
     dimension = int([line.split(":")[1] for line in lines if line.startswith("DIMENSION")][0])
-    coord_section_index = lines.index("NODE_COORD_SECTION\n") + 1
 
-    coords = []
-    for line in lines[coord_section_index:coord_section_index + dimension]:
-        parts = line.split()
-        city_number = int(parts[0])
-        x, y = map(float, parts[1:])
-        coords.append((x, y))
+    coords = None
+
+    if("NODE_COORD_SECTION\n" in lines):
+        coord_section_index = lines.index("NODE_COORD_SECTION\n") + 1
+
+        coords = []
+        for line in lines[coord_section_index:coord_section_index + dimension]:
+            parts = line.split()
+            city_number = int(parts[0])
+            x, y = map(float, parts[1:])
+            coords.append((x, y))
+
+    edges = None
+
+    if("EDGE_WEIGHT_SECTION\n" in lines):
+        edge_section_index = lines.index("EDGE_WEIGHT_SECTION\n") + 1
+
+        edges = []
+        for line in lines[edge_section_index:edge_section_index + dimension]:
+            parts = line.split()
+            # city_number = int(parts[0])
+            edge_row = map(float, parts[1:])
+            edges.append(edge_row)
 
     tour = None
 
     if("TOUR_SECTION\n" in lines):
         tour_index = lines.index("TOUR_SECTION\n") + 1
+        
         tour = []
         for line in lines[tour_index:tour_index + dimension]:
             city_number = int(line)-1
             tour.append(city_number)
 
-    return (coords,tour)
+    return (coords,edges,tour)
