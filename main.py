@@ -9,6 +9,7 @@ from frames import InfoFrame,TSPFrame,SimFrame
 
 class App(ctk.CTk):
     def __init__(self) -> None:
+        ctk.set_appearance_mode("dark")
         super().__init__()
 
         self.geometry("1920x1080")
