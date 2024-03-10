@@ -1,9 +1,11 @@
 import tkinter as tk
+from typing import Tuple
 import customtkinter as ctk
 import networkx as nx
 
 from matplotlib.figure import Figure 
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg) 
+from PIL import Image
 
 class FrameObject(ctk.CTkFrame):
 
@@ -13,9 +15,9 @@ class FrameObject(ctk.CTkFrame):
     def __init__(self, master, type, text="", val=0, size=None, steps=None, fontType="tsp"):
         ctk.CTkFrame.__init__(self, master=master)
 
-        fontStyle = font=("Bahnschrift", 15)
+        fontStyle = ("Bahnschrift", 15)
         if(fontType=="sim"):
-            fontStyle = font=("Bahnschrift", 15)
+            fontStyle = ("Small Fonts", 15)
 
         label_width = 400
         if(type == "label"):
@@ -84,3 +86,17 @@ class GraphObject(Figure):
         pos = {node: coords for node, coords in nx.get_node_attributes(self.graph, "pos").items()}
         nx.draw(self.graph, pos, with_labels=False, node_size=50, node_color=self.colour, ax=plot1)
         self.canvas.draw()
+
+class ImageObject(ctk.CTkImage):
+
+    image:Image
+    viewSize: Tuple[int,int]
+
+    def __init__(self, imagePath, size: Tuple[int, int] = (100,100)):
+        self.image = Image.open(imagePath)
+        super().__init__(self.image, self.image, size)
+        self.viewSize = size
+
+    def reRender(self,image):
+        self.configure(light_image=image,
+                        dark_image=image)

@@ -8,8 +8,9 @@ import math
 from tkinter import filedialog
 from matplotlib.figure import Figure 
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg) 
+from PIL import Image
 
-from tkinter_objects import FrameObject,GraphObject
+from tkinter_objects import FrameObject,GraphObject,ImageObject
 from file_loader import Loader
 from tsp import TSP
 from pheromone_matrix import PMat
@@ -28,7 +29,7 @@ class InfoFrame(ctk.CTkFrame):
         label = ctk.CTkLabel(self, text="It is intended to show how parameters affect the algorithm and hopefully give an understanding of how it works", font=("Tw Cen MT", 20))
         label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
 
-        label = ctk.CTkLabel(self, text="Travelling Salesperson Problem", font=("Bahnschrift", 30))
+        label = ctk.CTkLabel(self, text="Travelling Salesperson Problem Solver", font=("Bahnschrift", 30))
         label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
 
         label = ctk.CTkLabel(self, text="This problem is about finding the shortest route around every point in a graph, this can be done using ACO to simulate ants travelling and just like real ants will eventually settle into a shortest route", font=("Bahnschrift", 16))
@@ -59,6 +60,15 @@ class InfoFrame(ctk.CTkFrame):
         label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
 
         label = ctk.CTkLabel(self, text="This is how quickly the pheromones will evaporate, default is 10% per pass, increasing this forgets known routes faster but encourages exploration", font=("Bahnschrift", 14))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="Ant Colony Simulation", font=("Small Fonts", 30))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="This can simulate a nest and food sources and is done using ACO to simulate ants navigating and just like real ants will eventually form paths to food sources from their nest", font=("Small Fonts", 16))
+        label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
+
+        label = ctk.CTkLabel(self, text="There are a few parameters that can be changed and they'll be explained here to keep the UI clean so switch to the other when you're ready", font=("Small Fonts", 16))
         label.pack(side=tk.TOP, fill=tk.X, pady=10, padx=10)
 
     def menuBar(self,root):
@@ -207,15 +217,6 @@ class TSPFrame(ctk.CTkFrame):
         self.solutionCost = ctk.CTkLabel(master=statsFrame, text="File Solution Cost: 0", font=("Bahnschrift", 15))
         self.solutionCost.pack(pady=10)
 
-        # self.cost = FrameObject(master=displayFrame,type="label",text="ACO Cost: 0")
-        # self.cost.pack()
-
-        # self.solverCost = FrameObject(master=displayFrame,type="label",text="Solver Cost: 0")
-        # self.solverCost.pack()
-
-        # self.solutionCost = FrameObject(master=displayFrame,type="label",text="File Solution Cost: 0")
-        # self.solutionCost.pack()
-
         statsFrame.pack(side=tk.BOTTOM, fill=tk.X, pady=10, padx=10)
 
         displayFrame.pack(side=tk.RIGHT)
@@ -267,8 +268,15 @@ class SimFrame(ctk.CTkFrame):
     def __init__(self, master):
         ctk.CTkFrame.__init__(self, master)
 
-        label = ctk.CTkLabel(self, text="Virtual Simulation using ACO")
-        label.pack(side="top", fill="x", pady=10)
+        titleFrame = ctk.CTkFrame(master=self, width=1000)
+
+        label = ctk.CTkLabel(master=titleFrame, text="Ant Colony Simulation", font=("Small Fonts", 30))
+        label.pack(pady=5)
+
+        label = ctk.CTkLabel(master=titleFrame, text="Uses an Ant Colony Optimisation Path Finding Algorithm", font=("Small Fonts", 15))
+        label.pack(pady=5)
+
+        titleFrame.pack(side=tk.TOP, fill=tk.X)
 
         self.foodTau = None
         self.nestTau = None
@@ -290,64 +298,58 @@ class SimFrame(ctk.CTkFrame):
 
     def createWidgets(self) -> None:
 
-        self.WIDTH, self.HEIGHT = 320, 320
+        self.WIDTH = 1280
         
         self.SIMWIDTH = 64
+
+        self.RATIO = self.WIDTH / self.SIMWIDTH
         
-        self.canvas = ctk.CTkCanvas(self, width=self.WIDTH, height=self.HEIGHT, bg="#000000")
-        self.canvas.pack()
+        # self.canvas = ctk.CTkCanvas(self, width=self.WIDTH, height=self.WIDTH, bg="#000000")
+        # self.canvas.pack(side=tk.RIGHT, padx=10, pady=10)
 
-        alphaFrame = ctk.CTkFrame(master=self)
+        self.image = ImageObject(imagePath="IMG_0069.PNG",size=(1280, 1280))
+        self.imageLabel = ctk.CTkLabel(self,image=self.image,text="")
+        self.imageLabel.pack(side=tk.RIGHT, padx=10, pady=10)
 
-        alphaLabel = ctk.CTkLabel(master=alphaFrame, text="Value of pheromone impact: ", width=40)
-        alphaLabel.pack(side=tk.LEFT)
+        menuFrame = ctk.CTkFrame(master=self)
 
-        alphaScale = tk.Scale(master=alphaFrame, from_=0, to=2, resolution=0.1, orient=tk.HORIZONTAL, tickinterval=1, width=20)
-        alphaScale.set(1)
-        alphaScale.pack(side=tk.RIGHT)
+        load = ctk.CTkButton(master=menuFrame,text="Load Map",command=self.openFileBrowser, font=("Small Fonts", 15))
+        load.pack(pady=10, padx=10)
 
-        alphaFrame.pack()
+        iterations = FrameObject(master=menuFrame,type="entry",text="Iterations",val="500",fontType="sim")
+        iterations.pack(pady=10, padx=10)
 
-        betaFrame = ctk.CTkFrame(master=self)
+        alpha = FrameObject(master=menuFrame,type="scale",text="Pheromone impact",val=1,size=(0,2),steps=20,fontType="sim")
+        alpha.pack(pady=10, padx=10)
 
-        betaLabel = ctk.CTkLabel(master=betaFrame, text="Value of proximity impact: ", width=40)
-        betaLabel.pack(side=tk.LEFT)
+        beta = FrameObject(master=menuFrame,type="scale",text="Proximity impact",val=2,size=(0,4),steps=40,fontType="sim")
+        beta.pack(pady=10, padx=10)
 
-        betaScale = tk.Scale(master=betaFrame, from_=0, to=4, resolution=0.1, orient=tk.HORIZONTAL, tickinterval=1, width=20)
-        betaScale.set(2)
-        betaScale.pack(side=tk.RIGHT)
-
-        betaFrame.pack()
-
-        evapFrame = ctk.CTkFrame(master=self)
-
-        evapLabel = ctk.CTkLabel(master=evapFrame, text="Evaporation Coefficient: ", width=40)
-        evapLabel.pack(side=tk.LEFT)
-
-        evapScale = tk.Scale(master=evapFrame, from_=0, to=0.5, resolution=0.01, orient=tk.HORIZONTAL, width=20)
-        evapScale.set(0.1)
-        evapScale.pack(side=tk.RIGHT)
-
-        evapFrame.pack()
+        evap = FrameObject(master=menuFrame,type="scale",text="Evaporation",val=0.1,size=(0,1),fontType="sim")
+        evap.pack(pady=10, padx=10)
 
         startButton = ctk.CTkButton(
-            master=self,
+            master=menuFrame,
             text="Run Sim", 
             width=25, 
             command=lambda:self.runSimThread(
                 foodTau=self.foodTau,
                 nestTau=self.nestTau,
                 ants=self.ants,
-                alpha=float(alphaScale.get()),
-                beta=float(betaScale.get()),
-                evap=float(evapScale.get())
-            )
+                alpha=alpha.get(),
+                beta=beta.get(),
+                evap=evap.get(),
+                iterations=int(iterations.get())
+            ),
+            font=("Small Fonts", 15)
         )
         startButton.pack()
 
+        menuFrame.pack(side=tk.LEFT, pady=10, padx=10)
+
     def loadSim(self, filename):
 
-        self.img = tk.PhotoImage(width=self.WIDTH, height=self.HEIGHT,file=filename)
+        self.img = tk.PhotoImage(width=self.WIDTH, height=self.WIDTH,file=filename)
         
         self.foodTau = PMat(size=self.SIMWIDTH)
         self.nestTau = PMat(size=self.SIMWIDTH)
@@ -376,20 +378,20 @@ class SimFrame(ctk.CTkFrame):
             self.antMap[spawn[0]][spawn[1]] += 1
             self.ants.append(ant)
 
-    def runSimThread(self,foodTau, nestTau, ants, alpha, beta, evap):
+    def runSimThread(self,foodTau, nestTau, ants:list[AntSim], alpha, beta, evap, iterations):
         for ant in ants:
             ant.alpha = alpha
             ant.beta = beta
-        t = threading.Thread(target=lambda:self.runSim(foodTau=foodTau, nestTau=nestTau, ants=ants, evaporation=evap))
+        t = threading.Thread(target=lambda:self.runSim(foodTau=foodTau, nestTau=nestTau, ants=ants, evaporation=evap, iterations=iterations))
         t.start()
 
-    def runSim(self,foodTau, nestTau, ants, evaporation):
+    def runSim(self,foodTau:PMat, nestTau:PMat, ants:list[AntSim], evaporation, iterations):
         if(foodTau == None):
             return
         population = len(ants)
         # evaporation = 0.02
         pheromone = 1
-        for i in range(5000):
+        for i in range(iterations):
             for ant in ants:
                 self.antMap[ant.x][ant.y] -= 1
                 ant.move(foodTau,nestTau)
@@ -403,9 +405,10 @@ class SimFrame(ctk.CTkFrame):
             if(i % 50 == 0):
                 self.redrawPixels(foodTau,nestTau)
 
-    def redrawPixels(self,foodTau,nestTau):
-        self.canvas.delete("all")
-        colourMap = [["#"] * self.SIMWIDTH for i in range(self.SIMWIDTH)]
+    def redrawPixels(self,foodTau:PMat,nestTau:PMat):
+        # self.canvas.delete("all")
+        # colourMap = [["#"] * self.SIMWIDTH for i in range(self.SIMWIDTH)]
+        colourMap = np.zeros((self.SIMWIDTH, self.SIMWIDTH, 4), dtype=np.uint8)
         highestPher = foodTau.highest()
         pherMap = foodTau.all()
         for i,row in enumerate(pherMap):
@@ -417,7 +420,8 @@ class SimFrame(ctk.CTkFrame):
                 r = str(hex(int(255*val))[2:])
                 if(len(r) == 1):
                     r = "0" + r
-                colourMap[i][j] += r
+                # print(val)
+                colourMap[i][j][0] += val
         highestPher2 = nestTau.highest()
         pherMap2 = nestTau.all()
         for i,row in enumerate(pherMap2):
@@ -429,7 +433,7 @@ class SimFrame(ctk.CTkFrame):
                 g = str(hex(int(255*val))[2:])
                 if(len(g) == 1):
                     g = "0" + g
-                colourMap[i][j] += g
+                colourMap[i][j][1] += val
         highestAnt = 0
         for row in self.antMap:
             if(max(row)>highestAnt):
@@ -443,8 +447,16 @@ class SimFrame(ctk.CTkFrame):
                 b = str(hex(int(255*val))[2:])
                 if(len(b) == 1):
                     b = "0" + b
-                colourMap[i][j] += b
-        for i,row in enumerate(colourMap):
-            for j,item in enumerate(row):
-                if item != '#000000':
-                    self.canvas.create_rectangle(i*5,j*5,(i*5)+5,(j*5)+5,fill=item,width=0)
+                colourMap[i][j][2] += val
+        
+        # print(colourMap[32][32])
+
+        # Convert the scaled array to a PIL image
+        newImage = Image.fromarray(colourMap)
+        newImage.resize(self.image.viewSize)
+        newImage.save("Testimage.png")
+        self.image.reRender(newImage)
+        # for i,row in enumerate(colourMap):
+        #     for j,item in enumerate(row):
+        #         if item != '#000000':
+        #             self.canvas.create_rectangle(i*self.RATIO,j*self.RATIO,(i*self.RATIO)+self.RATIO,(j*self.RATIO)+self.RATIO,fill=item,width=0)
