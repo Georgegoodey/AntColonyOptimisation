@@ -368,6 +368,15 @@ class SimFrame(ctk.CTkFrame):
         evap = FrameObject(master=menuFrame,type="scale",text="Evaporation",val=0.1,size=(0,1),fontType="sim")
         evap.pack(pady=10, padx=10)
 
+        pheromoneRange = FrameObject(master=menuFrame,type="dualEntry",text="Pheromone range", val=0.01, val2=5, fontType="sim")
+        pheromoneRange.pack(pady=10, padx=10)
+
+        self.foodPheromone = ctk.CTkLabel(master=menuFrame, text="Food Pheromone Range: [1,1]", font=("Small Fonts", 15))
+        self.foodPheromone.pack(pady=5)
+
+        self.nestPheromone = ctk.CTkLabel(master=menuFrame, text="Nest Pheromone Range: [1,1]", font=("Small Fonts", 15))
+        self.nestPheromone.pack(pady=5)
+
         startButton = ctk.CTkButton(
             master=menuFrame,
             text="Run Sim", 
@@ -379,7 +388,8 @@ class SimFrame(ctk.CTkFrame):
                 alpha=alpha.get(),
                 beta=beta.get(),
                 evap=evap.get(),
-                iterations=int(iterations.get())
+                iterations=int(iterations.get()),
+                pRange=pheromoneRange.get(vals=2)
             ),
             font=("Small Fonts", 15)
         )
@@ -418,14 +428,14 @@ class SimFrame(ctk.CTkFrame):
             self.antMap[spawn[0]][spawn[1]] += 1
             self.ants.append(ant)
 
-    def runSimThread(self,foodTau, nestTau, ants:list[AntSim], alpha, beta, evap, iterations):
+    def runSimThread(self,foodTau, nestTau, ants:list[AntSim], alpha, beta, evap, iterations, pRange):
         for ant in ants:
             ant.alpha = alpha
             ant.beta = beta
-        t = threading.Thread(target=lambda:self.runSim(foodTau=foodTau, nestTau=nestTau, ants=ants, evaporation=evap, iterations=iterations))
+        t = threading.Thread(target=lambda:self.runSim(foodTau=foodTau, nestTau=nestTau, ants=ants, evaporation=evap, iterations=iterations, pRange=pRange))
         t.start()
 
-    def runSim(self,foodTau:PMat, nestTau:PMat, ants:list[AntSim], evaporation, iterations):
+    def runSim(self,foodTau:PMat, nestTau:PMat, ants:list[AntSim], evaporation, iterations, pRange):
         if(foodTau == None):
             return
         population = len(ants)
@@ -441,7 +451,11 @@ class SimFrame(ctk.CTkFrame):
                     nestTau.add(ant.x,ant.y,(pheromone/population))
                 self.antMap[ant.x][ant.y] += 1
             foodTau.evaporate(evaporation)
+            foodTau.threshold(pRange)
             nestTau.evaporate(evaporation)
+            nestTau.threshold(pRange)
+            self.foodPheromone.configure(text="Food Pheromone Range: ["+str(math.floor(foodTau.content.min()*1000)/1000)+","+str(math.floor(foodTau.content.max()*1000)/1000)+"]")
+            self.nestPheromone.configure(text="Nest Pheromone Range: ["+str(math.floor(nestTau.content.min()*1000)/1000)+","+str(math.floor(nestTau.content.max()*1000)/1000)+"]")
             if(i % 50 == 0):
                 self.redrawPixels(foodTau,nestTau)
 

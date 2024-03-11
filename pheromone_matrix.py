@@ -1,3 +1,5 @@
+import numpy as np
+
 class PMat:
 
     content: list[list[float]]
@@ -7,7 +9,8 @@ class PMat:
     persist: list[int]
 
     def __init__(self, size:int) -> None:
-        self.content = [[0] * size for i in range(size)]
+        self.content = np.zeros((size,size))
+        self.walls = np.zeros((size,size))
         self.size = size
         self.shape = [size,size]
         self.persist = []
@@ -43,6 +46,7 @@ class PMat:
         corners = [self.content[i-1][j-1],self.content[i-1][j+1],self.content[i+1][j-1],self.content[i+1][j+1]]
         sides = [self.content[i-1][j],self.content[i][j-1],self.content[i][j+1],self.content[i+1][j]]
         c = self.content
+        indices = [(i-1,j),(i-1,j+1),(i,j+1),(i+1,j+1),(i+1,j),(i+1,j-1),(i,j-1),(i-1,j-1)]
         neighbours = [c[i-1][j],c[i-1][j+1],c[i][j+1],c[i+1][j+1],c[i+1][j],c[i+1][j-1],c[i][j-1],c[i-1][j-1]]
         return neighbours
 
@@ -60,13 +64,13 @@ class PMat:
                 if([i,j] not in self.persist and num > -0.1):
                     self.content[i][j] = (num * (1-val))
 
+    def threshold(self,pRange):
+        ...
+        # self.content = np.where(self.content > pRange[0] or self.content != -1, self.content, pRange[0])
+        # self.content = np.where(self.content < pRange[1], self.content, pRange[1])
+
     def highest(self) -> float:
         '''
             Returns the highest value in the matrix, used for display scaling
         '''
-        best = 0
-        for i,row in enumerate(self.content):
-            for j,item in enumerate(row):
-                if item > best and [i,j] not in self.persist:
-                    best = item
-        return best
+        return self.content.max()
