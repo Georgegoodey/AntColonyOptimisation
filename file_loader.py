@@ -10,6 +10,7 @@ class Loader:
 
     def loadFile(self, filepath:str) -> None:
         filetype = os.path.splitext(filepath)[1][1:]
+        self.coords = []
         if(filetype == "csv"):
             self.coords = loadCSV(filename=filepath)
         elif(filetype == "tsp"):

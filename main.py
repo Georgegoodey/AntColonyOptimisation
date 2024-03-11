@@ -23,15 +23,16 @@ class App(ctk.CTk):
         mainView.add("Info")
         mainView.add("Graphs")
         mainView.add("Simulation")
+        mainView._segmented_button.configure(font=("Tw Cen MT", 15))
 
-        infoFrame = InfoFrame(master=mainView.tab("Info"))
-        infoFrame.pack()
+        self.infoFrame = InfoFrame(master=mainView.tab("Info"))
+        self.infoFrame.pack()
 
-        graphFrame = TSPFrame(master=mainView.tab("Graphs"))
-        graphFrame.pack()
+        self.graphFrame = TSPFrame(master=mainView.tab("Graphs"))
+        self.graphFrame.pack()
 
-        simFrame = SimFrame(master=mainView.tab("Simulation"))
-        simFrame.pack()
+        self.simFrame = SimFrame(master=mainView.tab("Simulation"))
+        self.simFrame.pack()
 
         mainView.pack()
 
@@ -41,9 +42,6 @@ class App(ctk.CTk):
         '''
         frame = self.frames[page_name]
         frame.tkraise()
-
-        # menuBar = frame.menuBar(self)
-        # self.configure(menu=menuBar)
 
     def toggleFullscreen(self,even=None):
         self.fs = not self.fs
@@ -56,4 +54,5 @@ class App(ctk.CTk):
 if __name__ == "__main__":
     app = App()
     app.mainloop()
+    app.graphFrame.running = False
     # print("App finished")

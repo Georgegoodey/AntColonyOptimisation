@@ -22,9 +22,9 @@ class TSP:
         self.bestCost = float("inf")
         self.bestRoute = []
 
-    def iterate(self,alpha,beta,evaporationCoeff,q,antCount):
+    def iterate(self,alpha,beta,evaporationCoeff,q,antCount,pRange):
         ants = []
-        tauChange = np.zeros(self.distMat.shape)
+        self.tauChange = np.zeros(self.distMat.shape)
         for a in range(antCount):
             ants.append(Ant(nodes=list(range(self.distMat.size)),alpha=alpha,beta=beta))
         roundBestRoute = []
@@ -38,12 +38,14 @@ class TSP:
                 roundBestCost = ant.cost
                 roundBestRoute = ant.route
         for r in range(len(self.bestRoute)-1):
-            tauChange[self.bestRoute[r]][self.bestRoute[r+1]] += q / self.bestCost
+            self.tauChange[self.bestRoute[r]][self.bestRoute[r+1]] += q
         for r in range(len(roundBestRoute)-1):
-            tauChange[roundBestRoute[r]][roundBestRoute[r+1]] += q / roundBestCost
-        self.tau += tauChange / 2
-        tauChange = np.zeros(self.distMat.shape)
+            self.tauChange[roundBestRoute[r]][roundBestRoute[r+1]] += q * (roundBestCost/self.bestCost)
+        self.tau += self.tauChange / 2
+        # tauChange = np.zeros(self.distMat.shape)
         self.tau *= (1-evaporationCoeff)
+        self.tau = np.where(self.tau > pRange[0], self.tau, pRange[0])
+        self.tau = np.where(self.tau < pRange[1], self.tau, pRange[1])
         return self.bestRoute,self.bestCost
 
     def getCost(self,route):

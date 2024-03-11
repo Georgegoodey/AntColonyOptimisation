@@ -12,7 +12,7 @@ class FrameObject(ctk.CTkFrame):
     # frame: ctk.CTkFrame
     label: ctk.CTkLabel
 
-    def __init__(self, master, type, text="", val=0, size=None, steps=None, fontType="tsp"):
+    def __init__(self, master, type, text="", val=0, val2=0, size=None, steps=None, fontType="tsp"):
         ctk.CTkFrame.__init__(self, master=master)
 
         fontStyle = ("Bahnschrift", 15)
@@ -35,16 +35,28 @@ class FrameObject(ctk.CTkFrame):
             self.val = ctk.CTkSlider(master=self, from_=size[0], to=size[1], width=200, number_of_steps=steps)
             self.val.set(val)
             self.val.pack(side=tk.RIGHT)
+        elif(type == "dualEntry"):
+            self.vFrame = ctk.CTkFrame(master=self, width=200)
+            self.val = ctk.CTkEntry(master=self.vFrame, width=100,font=fontStyle)
+            self.val.insert(0,val)
+            self.val.pack(side=tk.LEFT)
+            self.val2 = ctk.CTkEntry(master=self.vFrame, width=100,font=fontStyle)
+            self.val2.insert(0,val2)
+            self.val2.pack(side=tk.RIGHT)
+            self.vFrame.pack(side=tk.RIGHT)
 
-    def get(self):
-        return float(self.val.get())
+    def get(self,vals=1):
+        if(vals == 1):
+            return float(self.val.get())
+        else:
+            return (float(self.val.get()),float(self.val2.get()))
 
     def setText(self, text=""):
         self.label.configure(text=text)
 
 class GraphObject(Figure):
 
-    def __init__(self, master:ctk.CTkFrame, colour, figsize=(15,10), dpi=100) -> None:
+    def __init__(self, master:ctk.CTkFrame, colour, figsize=(12,5), dpi=100) -> None:
         Figure.__init__(self,figsize=figsize, dpi=dpi)
 
         self.master = master
