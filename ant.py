@@ -127,7 +127,7 @@ class AntSim:
         self.mapSize = 2*mapSize
     
     def probabilityIJ(self,tau,eta) -> float:
-        if(tau < -0.1):
+        if(tau <= 0):
             return 0
         pheromoneProx = tau**self.alpha * eta**-self.beta
         return pheromoneProx
@@ -141,7 +141,7 @@ class AntSim:
             sumAllowed += prob
             probs.append(prob)
         for n,i in enumerate(probs):
-            probs[n] = i / sumAllowed 
+            probs[n] = i / sumAllowed
         return random.choices(range(len(tau)),weights=probs,k=1)[0]
     
     def calcNewPos(self,x,y,index):
@@ -186,9 +186,9 @@ class AntSim:
         self.lastMove = newPosIndex
         newPos = self.calcNewPos(self.x,self.y,newPosIndex)
         self.x,self.y = newPos
-        if([self.x,self.y] in nestTau.persist):
+        if(nestTau.tiles[self.x][self.y] == 2):
             self.foundFood = False
             self.cost = self.mapSize
-        if([self.x,self.y] in foodTau.persist):
+        if(foodTau.tiles[self.x][self.y] == 2):
             self.foundFood = True
             self.cost = self.mapSize

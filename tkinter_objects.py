@@ -103,12 +103,11 @@ class ImageObject(ctk.CTkImage):
 
     image:Image
     viewSize: Tuple[int,int]
-
+    
     def __init__(self, imagePath, size: Tuple[int, int] = (100,100)):
         self.image = Image.open(imagePath)
-        super().__init__(self.image, self.image, size)
+        super().__init__(light_image=None, dark_image=self.image, size=size)
         self.viewSize = size
 
     def reRender(self,image):
-        self.configure(light_image=image,
-                        dark_image=image)
+        self.configure(dark_image=image)

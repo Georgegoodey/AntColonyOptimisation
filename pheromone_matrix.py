@@ -10,7 +10,7 @@ class PMat:
 
     def __init__(self, size:int) -> None:
         self.content = np.zeros((size,size))
-        self.walls = np.zeros((size,size))
+        self.tiles = np.zeros((size,size))
         self.size = size
         self.shape = [size,size]
         self.persist = []
@@ -43,11 +43,21 @@ class PMat:
         '''
             Returns the neighbours of position i,j
         '''
-        corners = [self.content[i-1][j-1],self.content[i-1][j+1],self.content[i+1][j-1],self.content[i+1][j+1]]
-        sides = [self.content[i-1][j],self.content[i][j-1],self.content[i][j+1],self.content[i+1][j]]
+        # corners = [self.content[i-1][j-1],self.content[i-1][j+1],self.content[i+1][j-1],self.content[i+1][j+1]]
+        # sides = [self.content[i-1][j],self.content[i][j-1],self.content[i][j+1],self.content[i+1][j]]
         c = self.content
         indices = [(i-1,j),(i-1,j+1),(i,j+1),(i+1,j+1),(i+1,j),(i+1,j-1),(i,j-1),(i-1,j-1)]
-        neighbours = [c[i-1][j],c[i-1][j+1],c[i][j+1],c[i+1][j+1],c[i+1][j],c[i+1][j-1],c[i][j-1],c[i-1][j-1]]
+        # indicesOpen = [i for i in indices if self.tiles[i[0]][i[1]] == 0]
+        # indicesAim = [i for i in indices if self.tiles[i[0]][i[1]] == 2]
+        neighbours = []
+        for i in indices:
+            if(self.tiles[i[0]][i[1]] == 0):
+                neighbours.append(c[i[0]][i[1]])
+            elif(self.tiles[i[0]][i[1]] == 2):
+                neighbours.append(100)
+            else:
+                neighbours.append(0)
+        # neighbours = [c[i-1][j],c[i-1][j+1],c[i][j+1],c[i+1][j+1],c[i+1][j],c[i+1][j-1],c[i][j-1],c[i-1][j-1]]
         return neighbours
 
     def all(self) -> list[list[float]]:
@@ -59,15 +69,15 @@ class PMat:
             Reduces the values to be (1-val) of the original value
             val: float representing how much evaporation should occur
         '''
-        for i,row in enumerate(self.content):
-            for j,num in enumerate(row):
-                if([i,j] not in self.persist and num > -0.1):
-                    self.content[i][j] = (num * (1-val))
+        # for i,row in enumerate(self.content):
+        #     for j,num in enumerate(row):
+        #         if([i,j] not in self.persist and num > -0.1):
+        #             self.content[i][j] = (num * (1-val))
+        self.content *= (1-val)
 
     def threshold(self,pRange):
-        ...
-        # self.content = np.where(self.content > pRange[0] or self.content != -1, self.content, pRange[0])
-        # self.content = np.where(self.content < pRange[1], self.content, pRange[1])
+        self.content = np.where(self.content > pRange[0], self.content, pRange[0])
+        self.content = np.where(self.content < pRange[1], self.content, pRange[1])
 
     def highest(self) -> float:
         '''

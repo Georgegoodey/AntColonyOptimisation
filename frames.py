@@ -4,6 +4,7 @@ import networkx as nx
 import threading
 import numpy as np
 import math
+import time
 
 from tkinter import filedialog
 from matplotlib.figure import Figure 
@@ -240,27 +241,27 @@ class TSPFrame(ctk.CTkFrame):
         self.solutionGraph = GraphObject(master=graphView.tab("Solution Graph"),colour="#66FF33")
         self.solutionGraph.drawGraph()
 
-        graphView.pack(side=tk.TOP, pady=10, padx=10)
+        graphView.pack(side=tk.TOP, pady=5, padx=10)
 
         statsFrame = ctk.CTkFrame(master=displayFrame, width=1000)
 
         self.cost = ctk.CTkLabel(master=statsFrame, text="ACO Cost: 0", font=("Bahnschrift", 15))
-        self.cost.pack(pady=5)
+        self.cost.pack(pady=3)
 
         self.solverCost = ctk.CTkLabel(master=statsFrame, text="Solver Cost: 0", font=("Bahnschrift", 15))
-        self.solverCost.pack(pady=5)
+        self.solverCost.pack(pady=3)
 
         self.solutionCost = ctk.CTkLabel(master=statsFrame, text="File Solution Cost: 0", font=("Bahnschrift", 15))
-        self.solutionCost.pack(pady=5)
+        self.solutionCost.pack(pady=3)
 
         self.pheromone = ctk.CTkLabel(master=statsFrame, text="Pheromone Range: [1,1]", font=("Bahnschrift", 15))
-        self.pheromone.pack(pady=5)
+        self.pheromone.pack(pady=3)
 
         statsFrame.pack(side=tk.BOTTOM, fill=tk.X, pady=10, padx=10)
 
-        displayFrame.pack(side=tk.RIGHT)
+        displayFrame.pack(pady=10, padx=10, side=tk.RIGHT)
 
-        widgetFrame.pack(fill=tk.BOTH)
+        widgetFrame.pack(pady=10, padx=10, fill=tk.BOTH)
 
     def stopRunning(self):
         self.running = False
@@ -344,19 +345,19 @@ class SimFrame(ctk.CTkFrame):
 
         self.RATIO = self.WIDTH / self.SIMWIDTH
         
-        self.canvas = ctk.CTkCanvas(self, width=self.WIDTH, height=self.WIDTH, bg="#000000")
-        self.canvas.pack(side=tk.RIGHT, padx=10, pady=10)
+        # self.canvas = ctk.CTkCanvas(self, width=self.WIDTH, height=self.WIDTH, bg="#000000")
+        # self.canvas.pack(side=tk.RIGHT, padx=10, pady=10)
 
-        # self.image = ImageObject(imagePath="blank.PNG",size=(1280, 1280))
-        # self.imageLabel = ctk.CTkLabel(self,image=self.image,text="")
-        # self.imageLabel.pack(side=tk.RIGHT, padx=10, pady=10)
+        self.image = ImageObject(imagePath="blank.PNG",size=(768, 768))
+        self.imageLabel = ctk.CTkLabel(self,image=self.image,text="")
+        self.imageLabel.pack(side=tk.RIGHT, padx=10, pady=10)
 
         menuFrame = ctk.CTkFrame(master=self)
 
         load = ctk.CTkButton(master=menuFrame,text="Load Map",command=self.openFileBrowser, font=("Small Fonts", 15))
         load.pack(pady=10, padx=10)
 
-        iterations = FrameObject(master=menuFrame,type="entry",text="Iterations",val="500",fontType="sim")
+        iterations = FrameObject(master=menuFrame,type="entry",text="Iterations",val="50",fontType="sim")
         iterations.pack(pady=10, padx=10)
 
         alpha = FrameObject(master=menuFrame,type="scale",text="Pheromone impact",val=1,size=(0,2),steps=20,fontType="sim")
@@ -368,7 +369,7 @@ class SimFrame(ctk.CTkFrame):
         evap = FrameObject(master=menuFrame,type="scale",text="Evaporation",val=0.1,size=(0,1),fontType="sim")
         evap.pack(pady=10, padx=10)
 
-        pheromoneRange = FrameObject(master=menuFrame,type="dualEntry",text="Pheromone range", val=0.01, val2=5, fontType="sim")
+        pheromoneRange = FrameObject(master=menuFrame,type="dualEntry",text="Pheromone range", val=0.001, val2=5, fontType="sim")
         pheromoneRange.pack(pady=10, padx=10)
 
         self.foodPheromone = ctk.CTkLabel(master=menuFrame, text="Food Pheromone Range: [1,1]", font=("Small Fonts", 15))
@@ -404,25 +405,36 @@ class SimFrame(ctk.CTkFrame):
         self.foodTau = PMat(size=self.SIMWIDTH)
         self.nestTau = PMat(size=self.SIMWIDTH)
 
-        self.antMap = [[0] * self.SIMWIDTH for i in range(self.SIMWIDTH)]
+        # self.antMap = [[0] * self.SIMWIDTH for i in range(self.SIMWIDTH)]
+        self.antMap = np.zeros((self.SIMWIDTH,self.SIMWIDTH))
 
         for i in range(self.SIMWIDTH):
             for j in range(self.SIMWIDTH):
                 if(self.img.get(i,j)[1] == 255):
                     self.foodTau.set(i,j,1)
-                    self.foodTau.addPersistant([i,j])
+                    self.foodTau.tiles[i,j] = 2
+                    self.nestTau.set(i,j,1)
+                    self.nestTau.tiles[i,j] = 0
                 elif(self.img.get(i,j)[2] == 255):
                     self.nestTau.set(i,j,1)
-                    self.nestTau.addPersistant([i,j])
+                    self.nestTau.tiles[i,j] = 2
+                    self.foodTau.set(i,j,1)
+                    self.foodTau.tiles[i,j] = 0
                 elif(self.img.get(i,j)[0] == 0):
-                    self.foodTau.set(i,j,0.01)
-                    self.nestTau.set(i,j,0.01)
+                    self.foodTau.set(i,j,1)
+                    self.foodTau.tiles[i,j] = 0
+                    self.nestTau.set(i,j,1)
+                    self.nestTau.tiles[i,j] = 0
                 else:
-                    self.foodTau.set(i,j,-1)
-                    self.nestTau.set(i,j,-1)
+                    self.foodTau.set(i,j,1)
+                    self.foodTau.tiles[i,j] = 1
+                    self.nestTau.set(i,j,1)
+                    self.nestTau.tiles[i,j] = 1
 
         self.ants = []
-        spawn = self.nestTau.persist[0]
+        spawns = np.where(self.nestTau.tiles == 2)
+        spawn = (spawns[0][0],spawns[1][0])
+        # spawn = self.nestTau.persist[0]
         for i in range(1000):
             ant = AntSim(spawn,1,2,self.SIMWIDTH)
             self.antMap[spawn[0]][spawn[1]] += 1
@@ -441,6 +453,9 @@ class SimFrame(ctk.CTkFrame):
         population = len(ants)
         # evaporation = 0.02
         pheromone = 1
+        startTime = time.time_ns()
+        # Iterations per render
+        ipr = 10
         for i in range(iterations):
             for ant in ants:
                 self.antMap[ant.x][ant.y] -= 1
@@ -456,40 +471,48 @@ class SimFrame(ctk.CTkFrame):
             nestTau.threshold(pRange)
             self.foodPheromone.configure(text="Food Pheromone Range: ["+str(math.floor(foodTau.content.min()*1000)/1000)+","+str(math.floor(foodTau.content.max()*1000)/1000)+"]")
             self.nestPheromone.configure(text="Nest Pheromone Range: ["+str(math.floor(nestTau.content.min()*1000)/1000)+","+str(math.floor(nestTau.content.max()*1000)/1000)+"]")
-            if(i % 50 == 0):
+            if(i % ipr == 0):
                 self.redrawPixels(foodTau,nestTau)
+                endTime = time.time_ns()
+                if(False):
+                    print("Iteration Time:   " + str((endTime-startTime) / (10 ** 9)))
+                startTime = time.time_ns()
 
     def redrawPixels(self,foodTau:PMat,nestTau:PMat):
-        self.canvas.delete("all")
+        startTime = time.time_ns()
+        # self.canvas.delete("all")
         colourMap = [["#"] * self.SIMWIDTH for i in range(self.SIMWIDTH)]
-        # img = Image.open( "blank.png" )
+        # img = Image.open("blank.png")
+        # print(img[0][0])
         # img.load()
-        # colourMap = np.asarray( img, dtype=np.uint8 )
-        # colourMap = np.zeros((self.SIMWIDTH, self.SIMWIDTH, 4), dtype=np.uint8)
+        # colourMap = np.random.randint(0, 256, (self.SIMWIDTH, self.SIMWIDTH, 3), dtype=np.uint8)
+        colourMap = np.zeros((self.SIMWIDTH, self.SIMWIDTH, 3), dtype=np.uint8)
         highestPher = foodTau.highest()
         pherMap = foodTau.all()
         for i,row in enumerate(pherMap):
             for j,item in enumerate(row):
-                if(item>0 and [i,j] not in foodTau.persist):
+                if(item>0 and foodTau.tiles[i,j] == 0):
                     val = (item/highestPher)
                 else:
                     val = 0
                 r = str(hex(int(255*val))[2:])
                 if(len(r) == 1):
                     r = "0" + r
-                colourMap[i][j] += r
+                # colourMap[i][j] += r
+                colourMap[i][j][0] = int(255*val)
         highestPher2 = nestTau.highest()
         pherMap2 = nestTau.all()
         for i,row in enumerate(pherMap2):
             for j,item in enumerate(row):
-                if(item>0 and [i,j] not in nestTau.persist):
+                if(item>0 and nestTau.tiles[i,j] == 0):
                     val = (item/highestPher2)
                 else:
                     val = 0
                 g = str(hex(int(255*val))[2:])
                 if(len(g) == 1):
                     g = "0" + g
-                colourMap[i][j] += g
+                # colourMap[i][j] += g
+                colourMap[i][j][1] = int(255*val)
         highestAnt = 0
         for row in self.antMap:
             if(max(row)>highestAnt):
@@ -503,15 +526,20 @@ class SimFrame(ctk.CTkFrame):
                 b = str(hex(int(255*val))[2:])
                 if(len(b) == 1):
                     b = "0" + b
-                colourMap[i][j] += b
+                # colourMap[i][j] += b
+                colourMap[i][j][2] = int(255*val)
         
-        # print(colourMap[32][32])
+        calcTime = time.time_ns()
 
-        # newImage = Image.fromarray(colourMap)
-        # newImage.resize(self.image.viewSize)
-        # newImage.save("Testimage.png")
-        # self.image.reRender(newImage)
-        for i,row in enumerate(colourMap):
-            for j,item in enumerate(row):
-                if item != '#000000':
-                    self.canvas.create_rectangle(i*self.RATIO,j*self.RATIO,(i*self.RATIO)+self.RATIO,(j*self.RATIO)+self.RATIO,fill=item,width=0)
+        newImage = Image.fromarray(colourMap)
+        newImage = newImage.resize(self.image.viewSize, resample=Image.NEAREST)
+        self.image.reRender(newImage)
+        # for i,row in enumerate(colourMap):
+        #     for j,item in enumerate(row):
+        #         if item != '#000000':
+        #             self.canvas.create_rectangle(i*self.RATIO,j*self.RATIO,(i*self.RATIO)+self.RATIO,(j*self.RATIO)+self.RATIO,fill=item,width=0)
+        endTime = time.time_ns()
+        if(False):
+            print("Calculation Time:  " + str((calcTime-startTime) / (10 ** 9)))
+            print("Render Time:      " + str((endTime-calcTime) / (10 ** 9)))
+            print("Total Time:       " + str((endTime-startTime) / (10 ** 9)))
