@@ -1,5 +1,5 @@
 NAME : small7
-COMMENT : 
+COMMENT : A small problem
 TYPE : TSP
 DIMENSION : 7
 EDGE_WEIGHT_TYPE : EUC_2D

@@ -2,6 +2,7 @@ import tkinter as tk
 from typing import Tuple
 import customtkinter as ctk
 import networkx as nx
+import numpy as np
 
 from matplotlib.figure import Figure 
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg) 
@@ -19,11 +20,11 @@ class FrameObject(ctk.CTkFrame):
         if(fontType=="sim"):
             fontStyle = ("Small Fonts", 15)
 
-        label_width = 400
+        labelWidth = 400
         if(type == "label"):
-            label_width = 600
+            labelWidth = 600
         
-        self.label = ctk.CTkLabel(master=self, text=text, width=label_width,font=fontStyle)
+        self.label = ctk.CTkLabel(master=self, text=text, width=labelWidth,font=fontStyle)
         self.label.pack(side=tk.LEFT)
 
         if(type == "entry"):
@@ -101,13 +102,52 @@ class GraphObject(Figure):
 
 class ImageObject(ctk.CTkImage):
 
-    image:Image
     viewSize: Tuple[int,int]
     
-    def __init__(self, imagePath, size: Tuple[int, int] = (100,100)):
-        self.image = Image.open(imagePath)
-        super().__init__(light_image=None, dark_image=self.image, size=size)
+    def __init__(self, size: Tuple[int, int] = (100,100)):
+        blankImage = np.zeros((size[0], size[1], 3), dtype=np.uint8)
+        blankImage = Image.fromarray(blankImage)
+        blankImage = blankImage.resize(size, resample=Image.NEAREST)
+        super().__init__(light_image=None, dark_image=blankImage, size=size)
         self.viewSize = size
 
     def reRender(self,image):
         self.configure(dark_image=image)
+
+class FileObject(ctk.CTkFrame):
+
+    def __init__(self, master, fontType="tsp"):
+        super().__init__(master=master)
+
+        fontStyle = ("Bahnschrift", 15)
+        if(fontType=="sim"):
+            fontStyle = ("Small Fonts", 15)
+
+        labelWidth = 350
+
+        self.nameLabel = ctk.CTkLabel(master=self, text="File Name:  N/A", width=labelWidth,font=fontStyle)
+        self.nameLabel.pack()
+
+        self.commentTitle = ctk.CTkLabel(master=self, text="File Comment:", width=labelWidth,font=fontStyle)
+        self.commentTitle.pack()
+        
+        self.commentLabel = ctk.CTkLabel(master=self, text="N/A", width=labelWidth,font=fontStyle)
+        self.commentLabel.pack()
+
+        self.nodeLabel = ctk.CTkLabel(master=self, text="Nodes: N/A", width=labelWidth,font=fontStyle)
+        self.nodeLabel.pack()
+
+        self.solLabel = ctk.CTkLabel(master=self, text="Contains Solution: N/A", width=labelWidth,font=fontStyle)
+        self.solLabel.pack()
+
+    def editVars(self,fileName:str="N/A",fileComment:str="N/A",nodes:int=0,sol:bool=False):
+        self.nameLabel.configure(text=("File Name:  "+str(fileName)))
+
+        self.commentLabel.configure(text=(str(fileComment)))
+
+        self.nodeLabel.configure(text=("Nodes: "+str(nodes)))
+
+        if(sol):
+            self.solLabel.configure(text=("Contains Solution: Yes"))
+        else:
+            self.solLabel.configure(text=("Contains Solution: No"))

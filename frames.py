@@ -11,7 +11,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg) 
 from PIL import Image
 
-from tkinter_objects import FrameObject,GraphObject,ImageObject
+from tkinter_objects import FrameObject,GraphObject,ImageObject,FileObject
 from file_loader import Loader
 from tsp import TSP
 from pheromone_matrix import PMat
@@ -120,7 +120,7 @@ class TSPFrame(ctk.CTkFrame):
         self.loadProblem(filepath)
 
     def loadProblem(self,filepath):
-        file = self.loader.loadFile(filepath=filepath)
+        file = self.loader.loadFile(filepath=filepath,fileInfo=self.fileInfo)
         self.coords = file[0]
         self.tour = file[2]
         if(self.coords):
@@ -145,13 +145,6 @@ class TSPFrame(ctk.CTkFrame):
         self.solutionGraph.initGraph(self.coords)
         self.solutionGraph.drawGraph()
 
-    def menuBar(self,root):
-        menuBar = tk.Menu(root)
-        fileMenu = tk.Menu(menuBar, tearoff=0)
-        fileMenu.add_command(label="Open", command=self.openFileBrowser)
-        menuBar.add_cascade(label="File", menu=fileMenu)
-        return menuBar
-
     def createWidgets(self):
 
         widgetFrame = ctk.CTkFrame(master=self)
@@ -160,18 +153,23 @@ class TSPFrame(ctk.CTkFrame):
 
         fileFrame = ctk.CTkFrame(master=menuFrame)
 
-        label = ctk.CTkLabel(master=fileFrame,text="File Info", font=("Bahnschrift", 15))
-        label.pack(side=tk.TOP)
+        label = ctk.CTkLabel(master=fileFrame,text="File Info",font=("Bahnschrift", 15))
+        label.pack(side=tk.TOP, pady=10, padx=10)
 
-        load = ctk.CTkButton(master=fileFrame,text="Load Problem",command=self.openFileBrowser, font=("Bahnschrift", 15), width=100)
+        buttonFrame = ctk.CTkFrame(master=fileFrame)
+
+        load = ctk.CTkButton(master=buttonFrame,text="Load Problem",command=self.openFileBrowser, font=("Bahnschrift", 15), width=100)
         load.pack(side=tk.LEFT, pady=10, padx=10)
 
-        reLoad = ctk.CTkButton(master=fileFrame,text="Reload",command=self.loadFile, font=("Bahnschrift", 15), width=100)
+        reLoad = ctk.CTkButton(master=buttonFrame,text="Reload",command=self.loadFile, font=("Bahnschrift", 15), width=100)
         reLoad.pack(side=tk.RIGHT, pady=10, padx=10)
 
-        fileFrame.pack(pady=10, padx=10)
+        buttonFrame.pack(padx=10)
 
-        # Add file info
+        self.fileInfo = FileObject(master=fileFrame)
+        self.fileInfo.pack(side=tk.BOTTOM, pady=10, padx=10)
+
+        fileFrame.pack(pady=10, padx=10)
 
         count = FrameObject(master=menuFrame,type="entry",text="Ant Count",val="30")
         count.pack(pady=10, padx=10)
@@ -348,7 +346,7 @@ class SimFrame(ctk.CTkFrame):
         # self.canvas = ctk.CTkCanvas(self, width=self.WIDTH, height=self.WIDTH, bg="#000000")
         # self.canvas.pack(side=tk.RIGHT, padx=10, pady=10)
 
-        self.image = ImageObject(imagePath="blank.PNG",size=(768, 768))
+        self.image = ImageObject(size=(768, 768))
         self.imageLabel = ctk.CTkLabel(self,image=self.image,text="")
         self.imageLabel.pack(side=tk.RIGHT, padx=10, pady=10)
 
@@ -357,7 +355,10 @@ class SimFrame(ctk.CTkFrame):
         load = ctk.CTkButton(master=menuFrame,text="Load Map",command=self.openFileBrowser, font=("Small Fonts", 15))
         load.pack(pady=10, padx=10)
 
-        iterations = FrameObject(master=menuFrame,type="entry",text="Iterations",val="50",fontType="sim")
+        antCount = FrameObject(master=menuFrame,type="entry",text="Ant Count",val="500",fontType="sim")
+        antCount.pack(pady=10, padx=10)
+
+        iterations = FrameObject(master=menuFrame,type="entry",text="Iterations",val="500",fontType="sim")
         iterations.pack(pady=10, padx=10)
 
         alpha = FrameObject(master=menuFrame,type="scale",text="Pheromone impact",val=1,size=(0,2),steps=20,fontType="sim")
@@ -461,9 +462,9 @@ class SimFrame(ctk.CTkFrame):
                 self.antMap[ant.x][ant.y] -= 1
                 ant.move(foodTau,nestTau)
                 if(ant.foundFood):
-                    foodTau.add(ant.x,ant.y,(pheromone/population))
+                    foodTau.add(ant.x,ant.y,(pheromone/population*100))
                 else:
-                    nestTau.add(ant.x,ant.y,(pheromone/population))
+                    nestTau.add(ant.x,ant.y,(pheromone/population*100))
                 self.antMap[ant.x][ant.y] += 1
             foodTau.evaporate(evaporation)
             foodTau.threshold(pRange)
@@ -481,7 +482,7 @@ class SimFrame(ctk.CTkFrame):
     def redrawPixels(self,foodTau:PMat,nestTau:PMat):
         startTime = time.time_ns()
         # self.canvas.delete("all")
-        colourMap = [["#"] * self.SIMWIDTH for i in range(self.SIMWIDTH)]
+        # colourMap = [["#"] * self.SIMWIDTH for i in range(self.SIMWIDTH)]
         # img = Image.open("blank.png")
         # print(img[0][0])
         # img.load()
@@ -491,55 +492,60 @@ class SimFrame(ctk.CTkFrame):
         pherMap = foodTau.all()
         for i,row in enumerate(pherMap):
             for j,item in enumerate(row):
-                if(item>0 and foodTau.tiles[i,j] == 0):
+                if(foodTau.tiles[i][j] == 0):
                     val = (item/highestPher)
-                else:
-                    val = 0
-                r = str(hex(int(255*val))[2:])
-                if(len(r) == 1):
-                    r = "0" + r
+                    colourMap[j][i][0] = int(255*val)
+                elif(foodTau.tiles[i][j] == 2):
+                    colourMap[j][i][0] = 255
+                    # colourMap[i][j][1] = 165
+                    # colourMap[i][j][2] = 255
+                # else:
+                #     val = 0
+                # r = str(hex(int(255*val))[2:])
+                # if(len(r) == 1):
+                #     r = "0" + r
                 # colourMap[i][j] += r
-                colourMap[i][j][0] = int(255*val)
         highestPher2 = nestTau.highest()
         pherMap2 = nestTau.all()
         for i,row in enumerate(pherMap2):
             for j,item in enumerate(row):
-                if(item>0 and nestTau.tiles[i,j] == 0):
+                if(nestTau.tiles[i][j] == 0):
                     val = (item/highestPher2)
-                else:
-                    val = 0
-                g = str(hex(int(255*val))[2:])
-                if(len(g) == 1):
-                    g = "0" + g
+                    colourMap[j][i][1] = int(255*val)
+                elif(nestTau.tiles[i][j] == 2):
+                    # colourMap[i][j][0] = 255
+                    colourMap[j][i][1] = 255
+                    # colourMap[i][j][2] = 255
+                # else:
+                #     val = 0
+                # g = str(hex(int(255*val))[2:])
+                # if(len(g) == 1):
+                #     g = "0" + g
                 # colourMap[i][j] += g
-                colourMap[i][j][1] = int(255*val)
-        highestAnt = 0
-        for row in self.antMap:
-            if(max(row)>highestAnt):
-                highestAnt = max(row)
+        highestAnt = self.antMap.max()
         for i,row in enumerate(self.antMap):
             for j,item in enumerate(row):
                 if(item > 0):
                     val = (item/highestAnt)
-                else:
-                    val = 0
-                b = str(hex(int(255*val))[2:])
-                if(len(b) == 1):
-                    b = "0" + b
+                    colourMap[j][i][2] = int(255*val)
+                # else:
+                #     val = 0
+                # b = str(hex(int(255*val))[2:])
+                # if(len(b) == 1):
+                #     b = "0" + b
                 # colourMap[i][j] += b
-                colourMap[i][j][2] = int(255*val)
         
         calcTime = time.time_ns()
 
         newImage = Image.fromarray(colourMap)
-        newImage = newImage.resize(self.image.viewSize, resample=Image.NEAREST)
-        self.image.reRender(newImage)
+        newImage2 = newImage.resize(self.image.viewSize, resample=Image.NEAREST)
+        self.image.reRender(newImage2)
         # for i,row in enumerate(colourMap):
         #     for j,item in enumerate(row):
         #         if item != '#000000':
         #             self.canvas.create_rectangle(i*self.RATIO,j*self.RATIO,(i*self.RATIO)+self.RATIO,(j*self.RATIO)+self.RATIO,fill=item,width=0)
         endTime = time.time_ns()
         if(False):
-            print("Calculation Time:  " + str((calcTime-startTime) / (10 ** 9)))
+            print("Calculation Time: " + str((calcTime-startTime) / (10 ** 9)))
             print("Render Time:      " + str((endTime-calcTime) / (10 ** 9)))
             print("Total Time:       " + str((endTime-startTime) / (10 ** 9)))
