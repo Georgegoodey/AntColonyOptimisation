@@ -114,7 +114,7 @@ class Loader:
                 city_number = int(line)-1
                 tour.append(city_number)
 
-        name = "N\A"
+        name = "N/A"
 
         if(lines[0].startswith("NAME")):
             name = lines[0].split(":")[1][1:-1]

@@ -2,14 +2,14 @@ import numpy as np
 
 class PMat:
 
-    content: list[list[float]]
+    content: np.array
     size: int
     '''size: the height and length of the content in the matrix'''
     shape: list[int]
     persist: list[int]
 
     def __init__(self, size:int) -> None:
-        self.content = np.zeros((size,size))
+        self.content = np.ones((size,size))
         self.tiles = np.zeros((size,size))
         self.size = size
         self.shape = [size,size]
@@ -54,7 +54,7 @@ class PMat:
             if(self.tiles[i[0]][i[1]] == 0):
                 neighbours.append(c[i[0]][i[1]])
             elif(self.tiles[i[0]][i[1]] == 2):
-                neighbours.append(100)
+                neighbours.append(10000)
             else:
                 neighbours.append(0)
         # neighbours = [c[i-1][j],c[i-1][j+1],c[i][j+1],c[i+1][j+1],c[i+1][j],c[i+1][j-1],c[i][j-1],c[i-1][j-1]]

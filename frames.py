@@ -1,21 +1,25 @@
 import tkinter as tk
 import customtkinter as ctk
-import networkx as nx
+import cv2
 import threading
 import numpy as np
 import math
 import time
+import warnings
 
 from tkinter import filedialog
 from matplotlib.figure import Figure 
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg) 
-from PIL import Image
+from PIL import Image, ImageTk
 
-from tkinter_objects import FrameObject,GraphObject,ImageObject,FileObject
+from tkinter_objects import FrameObject,GraphObject,FileObject
 from file_loader import Loader
 from tsp import TSP
 from pheromone_matrix import PMat
 from ant import AntSim
+
+# For getting rid of complaints about using unofficial image, as the official one causes flickering
+warnings.filterwarnings("ignore", category=Warning)
 
 class InfoFrame(ctk.CTkFrame):
 
@@ -304,6 +308,13 @@ class TSPFrame(ctk.CTkFrame):
         self.progressLabel.configure(text=string+"Training Progress: "+("█"*(percentOver4))+("▒"*(25-percentOver4)))#+str(percent)+"% "
 
 class SimFrame(ctk.CTkFrame):
+
+    ants:list[AntSim]
+    foodTau:PMat
+    nestTau:PMat
+    lastFile:str
+    running:bool
+
     def __init__(self, master):
         ctk.CTkFrame.__init__(self, master)
 
@@ -321,6 +332,10 @@ class SimFrame(ctk.CTkFrame):
         self.nestTau = None
         self.ants = []
 
+        self.lastFile = None
+
+        self.running = False
+
         self.createWidgets()
 
     def menuBar(self,root):
@@ -332,8 +347,14 @@ class SimFrame(ctk.CTkFrame):
     
     def openFileBrowser(self):
         filepath = filedialog.askopenfilename(initialdir="./",title="Select a File", filetypes=(("PNG files", "*.png"), ("All files", "*.*")))
+        self.loadFile(filepath=filepath)
+    
+    def loadFile(self,filepath=None):
         if(filepath):
-            self.loadSim(filename=filepath)
+            self.lastFile = filepath
+        elif(self.lastFile):
+            filepath = self.lastFile
+        self.loadSim(filename=filepath)
 
     def createWidgets(self) -> None:
 
@@ -343,35 +364,39 @@ class SimFrame(ctk.CTkFrame):
 
         self.RATIO = self.WIDTH / self.SIMWIDTH
         
-        # self.canvas = ctk.CTkCanvas(self, width=self.WIDTH, height=self.WIDTH, bg="#000000")
-        # self.canvas.pack(side=tk.RIGHT, padx=10, pady=10)
+        blankImage = np.zeros((self.WIDTH, self.WIDTH, 3), dtype=np.uint8)
+        blankImage = Image.fromarray(blankImage)
+        blankImage = blankImage.resize((self.WIDTH, self.WIDTH), resample=Image.NEAREST)        
 
-        self.image = ImageObject(size=(768, 768))
+        self.image = ImageTk.PhotoImage(image=blankImage)
         self.imageLabel = ctk.CTkLabel(self,image=self.image,text="")
         self.imageLabel.pack(side=tk.RIGHT, padx=10, pady=10)
-
+        
         menuFrame = ctk.CTkFrame(master=self)
+
+        self.antCount = FrameObject(master=menuFrame,type="entry",text="Ant Count",val="500",fontType="sim")
+        self.antCount.pack(pady=10, padx=10)
 
         load = ctk.CTkButton(master=menuFrame,text="Load Map",command=self.openFileBrowser, font=("Small Fonts", 15))
         load.pack(pady=10, padx=10)
 
-        antCount = FrameObject(master=menuFrame,type="entry",text="Ant Count",val="500",fontType="sim")
-        antCount.pack(pady=10, padx=10)
+        reLoad = ctk.CTkButton(master=menuFrame,text="Reload",command=self.loadFile, font=("Small Fonts", 15))
+        reLoad.pack(pady=10, padx=10)
 
-        iterations = FrameObject(master=menuFrame,type="entry",text="Iterations",val="500",fontType="sim")
-        iterations.pack(pady=10, padx=10)
+        # self.iterations = FrameObject(master=menuFrame,type="entry",text="Iterations",val="200",fontType="sim")
+        # self.iterations.pack(pady=10, padx=10)
 
-        alpha = FrameObject(master=menuFrame,type="scale",text="Pheromone impact",val=1,size=(0,2),steps=20,fontType="sim")
-        alpha.pack(pady=10, padx=10)
+        self.alpha = FrameObject(master=menuFrame,type="scale",text="Pheromone impact",val=1,size=(0,2),steps=20,fontType="sim")
+        self.alpha.pack(pady=10, padx=10)
 
-        beta = FrameObject(master=menuFrame,type="scale",text="Proximity impact",val=2,size=(0,4),steps=40,fontType="sim")
-        beta.pack(pady=10, padx=10)
+        self.beta = FrameObject(master=menuFrame,type="scale",text="Proximity impact",val=2,size=(0,4),steps=40,fontType="sim")
+        self.beta.pack(pady=10, padx=10)
 
-        evap = FrameObject(master=menuFrame,type="scale",text="Evaporation",val=0.1,size=(0,1),fontType="sim")
-        evap.pack(pady=10, padx=10)
+        self.evap = FrameObject(master=menuFrame,type="scale",text="Evaporation",val=0.1,size=(0,1),fontType="sim")
+        self.evap.pack(pady=10, padx=10)
 
-        pheromoneRange = FrameObject(master=menuFrame,type="dualEntry",text="Pheromone range", val=0.001, val2=5, fontType="sim")
-        pheromoneRange.pack(pady=10, padx=10)
+        self.pheromoneRange = FrameObject(master=menuFrame,type="dualEntry",text="Pheromone range", val=0.01, val2=5, fontType="sim")
+        self.pheromoneRange.pack(pady=10, padx=10)
 
         self.foodPheromone = ctk.CTkLabel(master=menuFrame, text="Food Pheromone Range: [1,1]", font=("Small Fonts", 15))
         self.foodPheromone.pack(pady=5)
@@ -379,23 +404,26 @@ class SimFrame(ctk.CTkFrame):
         self.nestPheromone = ctk.CTkLabel(master=menuFrame, text="Nest Pheromone Range: [1,1]", font=("Small Fonts", 15))
         self.nestPheromone.pack(pady=5)
 
-        startButton = ctk.CTkButton(
-            master=menuFrame,
+        startFrame =  ctk.CTkFrame(master=menuFrame)
+
+        self.startButton = ctk.CTkButton(
+            master=startFrame,
             text="Run Sim", 
-            width=25, 
-            command=lambda:self.runSimThread(
-                foodTau=self.foodTau,
-                nestTau=self.nestTau,
-                ants=self.ants,
-                alpha=alpha.get(),
-                beta=beta.get(),
-                evap=evap.get(),
-                iterations=int(iterations.get()),
-                pRange=pheromoneRange.get(vals=2)
-            ),
+            width=200, 
+            command=self.runSimThread,
             font=("Small Fonts", 15)
         )
-        startButton.pack(pady=10, padx=10)
+        self.startButton.pack(pady=10, padx=10)
+
+        self.stopButton = ctk.CTkButton(
+            master=startFrame,
+            text="Stop", 
+            width=200, 
+            command=self.stopRunning,
+            font=("Small Fonts", 15)
+        )
+
+        startFrame.pack(pady=10, padx=10)
 
         menuFrame.pack(side=tk.LEFT, pady=10, padx=10)
 
@@ -406,144 +434,140 @@ class SimFrame(ctk.CTkFrame):
         self.foodTau = PMat(size=self.SIMWIDTH)
         self.nestTau = PMat(size=self.SIMWIDTH)
 
-        # self.antMap = [[0] * self.SIMWIDTH for i in range(self.SIMWIDTH)]
         self.antMap = np.zeros((self.SIMWIDTH,self.SIMWIDTH))
 
         for i in range(self.SIMWIDTH):
             for j in range(self.SIMWIDTH):
                 if(self.img.get(i,j)[1] == 255):
-                    self.foodTau.set(i,j,1)
-                    self.foodTau.tiles[i,j] = 2
-                    self.nestTau.set(i,j,1)
-                    self.nestTau.tiles[i,j] = 0
+                    # self.foodTau.set(i,j,1)
+                    self.foodTau.tiles[i][j] = 2
+                    # self.nestTau.set(i,j,1)
+                    self.nestTau.tiles[i][j] = 0
                 elif(self.img.get(i,j)[2] == 255):
-                    self.nestTau.set(i,j,1)
-                    self.nestTau.tiles[i,j] = 2
-                    self.foodTau.set(i,j,1)
-                    self.foodTau.tiles[i,j] = 0
+                    # self.nestTau.set(i,j,1)
+                    self.nestTau.tiles[i][j] = 2
+                    # self.foodTau.set(i,j,1)
+                    self.foodTau.tiles[i][j] = 0
                 elif(self.img.get(i,j)[0] == 0):
-                    self.foodTau.set(i,j,1)
-                    self.foodTau.tiles[i,j] = 0
-                    self.nestTau.set(i,j,1)
-                    self.nestTau.tiles[i,j] = 0
+                    # self.foodTau.set(i,j,1)
+                    self.foodTau.tiles[i][j] = 0
+                    # self.nestTau.set(i,j,1)
+                    self.nestTau.tiles[i][j] = 0
                 else:
-                    self.foodTau.set(i,j,1)
-                    self.foodTau.tiles[i,j] = 1
-                    self.nestTau.set(i,j,1)
-                    self.nestTau.tiles[i,j] = 1
+                    # self.foodTau.set(i,j,1)
+                    self.foodTau.tiles[i][j] = 1
+                    # self.nestTau.set(i,j,1)
+                    self.nestTau.tiles[i][j] = 1
+
+        antCount = int(self.antCount.get())
 
         self.ants = []
         spawns = np.where(self.nestTau.tiles == 2)
         spawn = (spawns[0][0],spawns[1][0])
-        # spawn = self.nestTau.persist[0]
-        for i in range(1000):
+        for i in range(antCount):
             ant = AntSim(spawn,1,2,self.SIMWIDTH)
             self.antMap[spawn[0]][spawn[1]] += 1
             self.ants.append(ant)
+        
+        self.nestCount = antCount
+        self.foodCount = 0
 
-    def runSimThread(self,foodTau, nestTau, ants:list[AntSim], alpha, beta, evap, iterations, pRange):
+        self.redrawPixels()
+
+    def stopRunning(self):
+        self.running = False
+        self.startButton.pack()
+        self.stopButton.pack_forget()
+
+    def runSimThread(self):
+        t = threading.Thread(target=self.runSim)
+        t.start()
+
+    def runSim(self):
+        ants=self.ants
+        alpha=self.alpha.get()
+        beta=self.beta.get()
+        evaporation=self.evap.get()
+        # iterations=int(self.iterations.get())
+        pRange=self.pheromoneRange.get(vals=2)
+
         for ant in ants:
             ant.alpha = alpha
             ant.beta = beta
-        t = threading.Thread(target=lambda:self.runSim(foodTau=foodTau, nestTau=nestTau, ants=ants, evaporation=evap, iterations=iterations, pRange=pRange))
-        t.start()
-
-    def runSim(self,foodTau:PMat, nestTau:PMat, ants:list[AntSim], evaporation, iterations, pRange):
-        if(foodTau == None):
+        
+        if(self.foodTau == None):
             return
+        
         population = len(ants)
-        # evaporation = 0.02
         pheromone = 1
         startTime = time.time_ns()
         # Iterations per render
-        ipr = 10
-        for i in range(iterations):
+        ipr = 1
+        
+        self.stopButton.pack()
+        self.startButton.pack_forget()
+        self.running = True
+        while(self.running):
+
+        # for i in range(iterations):
             for ant in ants:
                 self.antMap[ant.x][ant.y] -= 1
-                ant.move(foodTau,nestTau)
+                if(ant.move(self.foodTau,self.nestTau)):
+                    if(not ant.foundFood):
+                        self.nestCount -= 1
+                        self.foodCount += 1
+                    else:
+                        self.nestCount += 1
+                        self.foodCount -= 1
                 if(ant.foundFood):
-                    foodTau.add(ant.x,ant.y,(pheromone/population*100))
+                    self.foodTau.add(ant.x,ant.y,(pheromone/population*50))
                 else:
-                    nestTau.add(ant.x,ant.y,(pheromone/population*100))
+                    self.nestTau.add(ant.x,ant.y,(pheromone/population*50))
                 self.antMap[ant.x][ant.y] += 1
-            foodTau.evaporate(evaporation)
-            foodTau.threshold(pRange)
-            nestTau.evaporate(evaporation)
-            nestTau.threshold(pRange)
-            self.foodPheromone.configure(text="Food Pheromone Range: ["+str(math.floor(foodTau.content.min()*1000)/1000)+","+str(math.floor(foodTau.content.max()*1000)/1000)+"]")
-            self.nestPheromone.configure(text="Nest Pheromone Range: ["+str(math.floor(nestTau.content.min()*1000)/1000)+","+str(math.floor(nestTau.content.max()*1000)/1000)+"]")
-            if(i % ipr == 0):
-                self.redrawPixels(foodTau,nestTau)
-                endTime = time.time_ns()
-                if(False):
-                    print("Iteration Time:   " + str((endTime-startTime) / (10 ** 9)))
-                startTime = time.time_ns()
+            self.foodTau.evaporate(evaporation)
+            self.foodTau.threshold(pRange)
+            self.nestTau.evaporate(evaporation)
+            self.nestTau.threshold(pRange)
+            self.foodPheromone.configure(text="Food Pheromone Range: ["+str(math.floor(self.foodTau.content.min()*1000)/1000)+","+str(math.floor(self.foodTau.content.max()*1000)/1000)+"]")
+            self.nestPheromone.configure(text="Nest Pheromone Range: ["+str(math.floor(self.nestTau.content.min()*1000)/1000)+","+str(math.floor(self.nestTau.content.max()*1000)/1000)+"]")
+            # if(i % ipr == 0):
+            self.redrawPixels()
+            endTime = time.time_ns()
+            if(False):
+                print("Iteration Time:   " + str((endTime-startTime) / (10 ** 9)))
+            startTime = time.time_ns()
 
-    def redrawPixels(self,foodTau:PMat,nestTau:PMat):
+    def redrawPixels(self):
         startTime = time.time_ns()
-        # self.canvas.delete("all")
-        # colourMap = [["#"] * self.SIMWIDTH for i in range(self.SIMWIDTH)]
-        # img = Image.open("blank.png")
-        # print(img[0][0])
-        # img.load()
-        # colourMap = np.random.randint(0, 256, (self.SIMWIDTH, self.SIMWIDTH, 3), dtype=np.uint8)
         colourMap = np.zeros((self.SIMWIDTH, self.SIMWIDTH, 3), dtype=np.uint8)
-        highestPher = foodTau.highest()
-        pherMap = foodTau.all()
-        for i,row in enumerate(pherMap):
-            for j,item in enumerate(row):
-                if(foodTau.tiles[i][j] == 0):
-                    val = (item/highestPher)
-                    colourMap[j][i][0] = int(255*val)
-                elif(foodTau.tiles[i][j] == 2):
-                    colourMap[j][i][0] = 255
-                    # colourMap[i][j][1] = 165
-                    # colourMap[i][j][2] = 255
-                # else:
-                #     val = 0
-                # r = str(hex(int(255*val))[2:])
-                # if(len(r) == 1):
-                #     r = "0" + r
-                # colourMap[i][j] += r
-        highestPher2 = nestTau.highest()
-        pherMap2 = nestTau.all()
-        for i,row in enumerate(pherMap2):
-            for j,item in enumerate(row):
-                if(nestTau.tiles[i][j] == 0):
-                    val = (item/highestPher2)
-                    colourMap[j][i][1] = int(255*val)
-                elif(nestTau.tiles[i][j] == 2):
-                    # colourMap[i][j][0] = 255
-                    colourMap[j][i][1] = 255
-                    # colourMap[i][j][2] = 255
-                # else:
-                #     val = 0
-                # g = str(hex(int(255*val))[2:])
-                # if(len(g) == 1):
-                #     g = "0" + g
-                # colourMap[i][j] += g
-        highestAnt = self.antMap.max()
-        for i,row in enumerate(self.antMap):
-            for j,item in enumerate(row):
-                if(item > 0):
-                    val = (item/highestAnt)
-                    colourMap[j][i][2] = int(255*val)
-                # else:
-                #     val = 0
-                # b = str(hex(int(255*val))[2:])
-                # if(len(b) == 1):
-                #     b = "0" + b
-                # colourMap[i][j] += b
+
+        foodMap = self.foodTau.content
+        colourMap[:,:,0] = ((foodMap - foodMap.min()) / (foodMap.max() - foodMap.min())) * 255
+
+        nestMap = self.nestTau.content
+        colourMap[:,:,1] = ((nestMap - nestMap.min()) / (nestMap.max() - nestMap.min())) * 255
         
+        antMap = self.antMap
+        colourMap[:,:,2] = ((antMap - antMap.min()) / (antMap.max() - antMap.min())) * 255
+
+        colourMap[self.foodTau.tiles == 1] = 30
+        colourMap[self.foodTau.tiles == 2,0] = 255
+        colourMap[self.nestTau.tiles == 2,1] = 255
+        
+        colourMap = np.flip(colourMap, axis=0)
+
         calcTime = time.time_ns()
 
+        colourMap = cv2.resize(colourMap,(self.WIDTH,self.WIDTH),interpolation=cv2.INTER_NEAREST)
+        colourMap = cv2.rotate(colourMap, cv2.ROTATE_90_CLOCKWISE)
         newImage = Image.fromarray(colourMap)
-        newImage2 = newImage.resize(self.image.viewSize, resample=Image.NEAREST)
-        self.image.reRender(newImage2)
-        # for i,row in enumerate(colourMap):
-        #     for j,item in enumerate(row):
-        #         if item != '#000000':
-        #             self.canvas.create_rectangle(i*self.RATIO,j*self.RATIO,(i*self.RATIO)+self.RATIO,(j*self.RATIO)+self.RATIO,fill=item,width=0)
+        
+        # newImage2 = newImage.resize((self.WIDTH,self.WIDTH), resample=Image.NEAREST)
+        # newImage3 = ImageTk.PhotoImage(image=newImage2)
+
+        self.image.paste(newImage)
+        # self.imageLabel.configure(image=self.image)
+        self.update_idletasks()
         endTime = time.time_ns()
         if(False):
             print("Calculation Time: " + str((calcTime-startTime) / (10 ** 9)))

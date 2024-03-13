@@ -171,6 +171,7 @@ class AntSim:
             tau = foodTau.getNeighbours(self.x, self.y)
         r2 = math.sqrt(2)
         eta = deque([1,r2,2,2*r2,4,2*r2,2,r2])
+        # eta = deque([1,1.3,1.6,2,2.5,2,1.6,1.3])
         eta.rotate(self.lastMove)
         # eta = list(eta)
         for e in range(len(eta)):
@@ -186,9 +187,12 @@ class AntSim:
         self.lastMove = newPosIndex
         newPos = self.calcNewPos(self.x,self.y,newPosIndex)
         self.x,self.y = newPos
-        if(nestTau.tiles[self.x][self.y] == 2):
+        if(nestTau.tiles[self.x][self.y] == 2 and self.foundFood):
             self.foundFood = False
             self.cost = self.mapSize
-        if(foodTau.tiles[self.x][self.y] == 2):
+            return True
+        if(foodTau.tiles[self.x][self.y] == 2 and not self.foundFood):
             self.foundFood = True
             self.cost = self.mapSize
+            return True
+        return False
