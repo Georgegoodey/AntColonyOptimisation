@@ -55,11 +55,11 @@ class TSP:
         return cost
 
     def useSolver(self):
-        solution,cost = self.useORSolver()
-        if(solution):
+        try:
+            solution,cost = self.useORSolver()
             # print("Used OR")
             return solution,cost
-        else:
+        except:
             # print("Used Py")
             solution,cost = self.usePySolver()
             return solution,cost
