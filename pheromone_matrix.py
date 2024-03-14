@@ -54,11 +54,11 @@ class PMat:
             if(self.tiles[i[0]][i[1]] == 0):
                 neighbours.append(c[i[0]][i[1]])
             elif(self.tiles[i[0]][i[1]] == 2):
-                neighbours.append(10000)
+                neighbours.append(1000)
             else:
                 neighbours.append(0)
         # neighbours = [c[i-1][j],c[i-1][j+1],c[i][j+1],c[i+1][j+1],c[i+1][j],c[i+1][j-1],c[i][j-1],c[i-1][j-1]]
-        return neighbours
+        return np.asarray(neighbours)
 
     def all(self) -> list[list[float]]:
         return self.content

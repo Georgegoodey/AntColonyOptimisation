@@ -145,30 +145,14 @@ class AntSim:
         return random.choices(range(len(tau)),weights=probs,k=1)[0]
     
     def calcNewPos(self,x,y,index):
-        if(index==0):
-            return [x-1,y]
-        elif(index==1):
-            return [x-1,y+1]
-        elif(index==2):
-            return [x,y+1]
-        elif(index==3):
-            return [x+1,y+1]
-        elif(index==4):
-            return [x+1,y]
-        elif(index==5):
-            return [x+1,y-1]
-        elif(index==6):
-            return [x,y-1]
-        elif(index==7):
-            return [x-1,y-1]
-        else:
-            return []
+        positions = [[x-1,y],[x-1,y+1],[x,y+1],[x+1,y+1],[x+1,y],[x+1,y-1],[x,y-1],[x-1,y-1]]
+        return positions[index]
 
     def move(self,foodTau:PMat,nestTau:PMat) -> None:
         if(self.foundFood):
-            tau = nestTau.getNeighbours(self.x, self.y)
+            tau = nestTau.getNeighbours(self.x,self.y)
         else:
-            tau = foodTau.getNeighbours(self.x, self.y)
+            tau = foodTau.getNeighbours(self.x,self.y)
         r2 = math.sqrt(2)
         eta = deque([1,r2,2,2*r2,4,2*r2,2,r2])
         # eta = deque([1,1.3,1.6,2,2.5,2,1.6,1.3])
