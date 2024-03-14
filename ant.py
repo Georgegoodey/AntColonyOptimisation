@@ -85,8 +85,8 @@ class Ant:
         probs = []
         # Calculate denominator while calculating ij probability as it stays the same regardless of j and only needs to be calced once
         sumAllowed = 0
-        for n in self.remaining:
-            prob = self.probabilityIJ(i,n,τ,η)
+        for j in self.remaining:
+            prob = self.probabilityIJ(i,j,τ,η)
             sumAllowed += prob
             probs.append(prob)
         for n,i in enumerate(probs):
@@ -119,12 +119,12 @@ class AntSim:
     def __init__(self, pos:list[int], alpha:float, beta:float, mapSize:int) -> None:
         self.x = pos[0]
         self.y = pos[1]
-        self.cost = 2*mapSize
+        self.cost = 10*mapSize
         self.alpha = alpha
         self.beta = beta
         self.lastMove = 3
         self.foundFood = False
-        self.mapSize = 2*mapSize
+        self.mapSize = 10*mapSize
     
     def probabilityIJ(self,tau,eta) -> float:
         if(tau <= 0):
@@ -155,12 +155,12 @@ class AntSim:
             tau = foodTau.getNeighbours(self.x,self.y)
         r2 = math.sqrt(2)
         eta = deque([1,r2,2,2*r2,4,2*r2,2,r2])
-        # eta = deque([1,1.3,1.6,2,2.5,2,1.6,1.3])
+        # eta = deque([1,2.5,3,5,6,5,3,2.5])
         eta.rotate(self.lastMove)
-        # eta = list(eta)
+        eta = list(eta)
         for e in range(len(eta)):
             if(e%2 != 0):
-                eta[e] = eta[e] * r2
+                eta[e] = eta[e] * 1.25
         # eta = [eta[e]*r2 for e in range(len(eta)) if e%2 == 0]
         newPosIndex = self.nextNode(tau,eta)
         cost = eta[newPosIndex]
