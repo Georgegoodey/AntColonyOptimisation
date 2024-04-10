@@ -188,16 +188,16 @@ class TSPFrame(ctk.CTkFrame):
         iterations = FrameObject(master=menuFrame,type="entry",text="How many iterations: ",val="30")
         # iterations.pack()
 
-        alpha = FrameObject(master=menuFrame,type="scale",text="Pheromone impact",val=1,size=(0,2),steps=20)
+        alpha = FrameObject(master=menuFrame,type="scale",text="Pheromone impact",val=1,size=(0,5),steps=50)
         alpha.pack(pady=10, padx=10)
 
-        beta = FrameObject(master=menuFrame,type="scale",text="Proximity impact",val=2,size=(0,4),steps=40)
+        beta = FrameObject(master=menuFrame,type="scale",text="Proximity impact",val=2,size=(0,5),steps=50)
         beta.pack(pady=10, padx=10)
 
-        evap = FrameObject(master=menuFrame,type="scale",text="Evaporation",val=0.1,size=(0,1))
+        evap = FrameObject(master=menuFrame,type="scale",text="Evaporation",val=0.1,size=(0,1),steps=100)
         evap.pack(pady=10, padx=10)
 
-        pheromoneRange = FrameObject(master=menuFrame,type="dualEntry",text="Pheromone range", val=0.01, val2=5)
+        pheromoneRange = FrameObject(master=menuFrame,type="dualEntry",text="Pheromone range", val=0.0001, val2=1)
         pheromoneRange.pack(pady=10, padx=10)
 
         acoFrame =  ctk.CTkFrame(master=menuFrame)
@@ -229,6 +229,15 @@ class TSPFrame(ctk.CTkFrame):
             font=("Bahnschrift", 15)
         )
         solverButton.pack(pady=10, padx=10)
+
+        # testButton = ctk.CTkButton(
+        #     master=menuFrame,
+        #     text="Run Tests", 
+        #     width=200, 
+        #     command=self.runTests,
+        #     font=("Bahnschrift", 15)
+        # )
+        # testButton.pack(pady=10, padx=10)
         
         menuFrame.pack(side=tk.LEFT, pady=10, padx=10)
 
@@ -279,6 +288,25 @@ class TSPFrame(ctk.CTkFrame):
     def runThread(self,alpha,beta,evap,q,count,iterations,pRange):
         self.thread = threading.Thread(target=lambda:self.runTSP(alpha,beta,evap,q,count,iterations,pRange))
         self.thread.start()
+
+    def runTests(self):
+        file = self.loader.loadFile(filepath=self.lastFile,fileInfo=self.fileInfo)
+        self.coords = file[0]
+        # alphas = np.arange(0.1, 2.1, 0.1)
+        # betas = np.arange(0.1, 4.1, 0.1)
+        # evaps = np.arange(0.05, 1.05, 0.05)
+        alphas = [0, 0.5, 1, 2, 5]
+        betas = [0, 1, 2, 5]  
+        evaps = [0.3, 0.5, 0.7, 0.9, 0.999]
+        for a in alphas:
+            b=2
+            for b in betas:
+                for e in evaps:
+                    self.tsp = TSP(coords=self.coords)
+                    for i in range(100):
+                        bestRoute,bestCost = self.tsp.iterate(a,b,e,0.5,50,[0.01,5])
+                        bestCost = self.tsp.getCost(bestRoute)
+                    print("Alpha: "+str(a)+" Beta: "+str(b)+" Evap: "+str(e)+" Cost "+str(bestCost))
 
     def runTSP(self,α,β,evaporationCoeff,q,antCount,iterations,pRange) -> None:
         self.stopButton.pack()
