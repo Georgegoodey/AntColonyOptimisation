@@ -47,9 +47,11 @@ class TSP:
         costs = [x[1] for x in tmp]
         for r in range(len(self.bestRoute)-1):
             self.tauChange[self.bestRoute[r]][self.bestRoute[r+1]] += q
+            self.tauChange[self.bestRoute[r+1]][self.bestRoute[r]] += q
         for i,route in enumerate(routes[:6]):
             for r in range(len(route)-1):
                 self.tauChange[route[r]][route[r+1]] += q * (costs[i]/self.bestCost)
+                self.tauChange[route[r+1]][route[r]] += q * (costs[i]/self.bestCost)
         self.tau += self.tauChange / 11
         # tauChange = np.zeros(self.distMat.shape)
         self.tau *= (1-evaporationCoeff)

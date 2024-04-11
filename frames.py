@@ -6,6 +6,7 @@ import numpy as np
 import math
 import time
 import warnings
+import csv
 
 from tkinter import filedialog
 from matplotlib.figure import Figure 
@@ -95,6 +96,11 @@ class InfoFrame(ctk.CTkFrame):
         return menuBar
 
 class TSPFrame(ctk.CTkFrame):
+
+    coords: list
+    loader: Loader
+    lastFile: str
+    running: bool
 
     def __init__(self, master):
         ctk.CTkFrame.__init__(self, master)
@@ -230,14 +236,14 @@ class TSPFrame(ctk.CTkFrame):
         )
         solverButton.pack(pady=10, padx=10)
 
-        # testButton = ctk.CTkButton(
-        #     master=menuFrame,
-        #     text="Run Tests", 
-        #     width=200, 
-        #     command=self.runTests,
-        #     font=("Bahnschrift", 15)
-        # )
-        # testButton.pack(pady=10, padx=10)
+        testButton = ctk.CTkButton(
+            master=menuFrame,
+            text="Run Tests", 
+            width=200, 
+            command=self.runTests,
+            font=("Bahnschrift", 15)
+        )
+        testButton.pack(pady=10, padx=10)
         
         menuFrame.pack(side=tk.LEFT, pady=10, padx=10)
 
@@ -292,21 +298,28 @@ class TSPFrame(ctk.CTkFrame):
     def runTests(self):
         file = self.loader.loadFile(filepath=self.lastFile,fileInfo=self.fileInfo)
         self.coords = file[0]
-        # alphas = np.arange(0.1, 2.1, 0.1)
-        # betas = np.arange(0.1, 4.1, 0.1)
+        outFile = open('tests.csv', 'a', newline='')
+        outWriter = csv.writer(outFile)
+        alphas = np.arange(0, 5.5, 0.5)
+        betas = np.arange(0, 5.5, 0.5)
         # evaps = np.arange(0.05, 1.05, 0.05)
-        alphas = [0, 0.5, 1, 2, 5]
-        betas = [0, 1, 2, 5]  
-        evaps = [0.3, 0.5, 0.7, 0.9, 0.999]
+        # alphas = [0, 0.5, 1, 2, 5]
+        # betas = [0, 1, 2, 5]  
+        # evaps = [0.3, 0.5, 0.7, 0.9, 0.999]
+        evaps = [0.5]*10
+        iterations = 100
+        iterator = range(iterations)
+        fileName = self.lastFile.split("/")[-1]
         for a in alphas:
-            b=2
             for b in betas:
                 for e in evaps:
                     self.tsp = TSP(coords=self.coords)
-                    for i in range(100):
+                    for i in iterator:
                         bestRoute,bestCost = self.tsp.iterate(a,b,e,0.5,50,[0.01,5])
                         bestCost = self.tsp.getCost(bestRoute)
-                    print("Alpha: "+str(a)+" Beta: "+str(b)+" Evap: "+str(e)+" Cost "+str(bestCost))
+                    # print("Alpha: "+str(a)+" Beta: "+str(b)+" Evap: "+str(e)+" Cost "+str(bestCost))
+                    outWriter.writerow([fileName,str(a),str(b),str(e),str(iterations),str(bestCost)])
+        outFile.close()
 
     def runTSP(self,α,β,evaporationCoeff,q,antCount,iterations,pRange) -> None:
         self.stopButton.pack()
