@@ -1,0 +1,22 @@
+NAME: 4x4 Grid TSP
+TYPE: TSP
+DIMENSION: 16
+EDGE_WEIGHT_TYPE: EUC_2D
+NODE_COORD_SECTION
+1  0  0
+2  1  0
+3  2  0
+4  3  0
+5  0  1
+6  1  1
+7  2  1
+8  3  1
+9  0  2
+10  1  2
+11  2  2
+12  3  2
+13  0  3
+14  1  3
+15  2  3
+16  3  3
+EOF

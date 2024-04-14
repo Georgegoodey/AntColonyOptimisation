@@ -244,6 +244,15 @@ class TSPFrame(ctk.CTkFrame):
             font=("Bahnschrift", 15)
         )
         testButton.pack(pady=10, padx=10)
+
+        testORButton = ctk.CTkButton(
+            master=menuFrame,
+            text="Run OR Tests", 
+            width=200, 
+            command=self.runTestsOR,
+            font=("Bahnschrift", 15)
+        )
+        testORButton.pack(pady=10, padx=10)
         
         menuFrame.pack(side=tk.LEFT, pady=10, padx=10)
 
@@ -296,30 +305,50 @@ class TSPFrame(ctk.CTkFrame):
         self.thread.start()
 
     def runTests(self):
-        file = self.loader.loadFile(filepath=self.lastFile,fileInfo=self.fileInfo)
-        self.coords = file[0]
-        outFile = open('tests.csv', 'a', newline='')
-        outWriter = csv.writer(outFile)
-        alphas = np.arange(0, 5.5, 0.5)
-        betas = np.arange(0, 5.5, 0.5)
-        # evaps = np.arange(0.05, 1.05, 0.05)
-        # alphas = [0, 0.5, 1, 2, 5]
-        # betas = [0, 1, 2, 5]  
-        # evaps = [0.3, 0.5, 0.7, 0.9, 0.999]
-        evaps = [0.5]*10
-        iterations = 100
-        iterator = range(iterations)
-        fileName = self.lastFile.split("/")[-1]
-        for a in alphas:
-            for b in betas:
-                for e in evaps:
-                    self.tsp = TSP(coords=self.coords)
-                    for i in iterator:
-                        bestRoute,bestCost = self.tsp.iterate(a,b,e,0.5,50,[0.01,5])
-                        bestCost = self.tsp.getCost(bestRoute)
-                    # print("Alpha: "+str(a)+" Beta: "+str(b)+" Evap: "+str(e)+" Cost "+str(bestCost))
-                    outWriter.writerow([fileName,str(a),str(b),str(e),str(iterations),str(bestCost)])
-        outFile.close()
+        # files = ['oliver30.tsp','dj38.tsp','att48.tsp','berlin52.tsp','pr76.tsp','kroB100.tsp']
+        files = ['4x16.tsp','5x25.tsp','6x36.tsp','7x49.tsp','8x64.tsp','9x81.tsp','10x100.tsp']
+        for f in files:
+            file = self.loader.loadFile(filepath=f,fileInfo=self.fileInfo)
+            self.coords = file[0]
+            size = len(self.coords)
+            outFile = open('testsScore.csv', 'a', newline='')
+            outWriter = csv.writer(outFile)
+            iterations = 500
+            iterator = range(iterations)
+            a = 1
+            b = 5
+            e = 0.5
+            
+            tests = 5
+            for t in range(tests):
+                best = float('inf')
+                self.tsp = TSP(coords=self.coords)
+                for i in iterator:
+                    startTime = time.time()
+                    bestRoute,bestCost = self.tsp.iterate(a,b,e,0.5,size,[0.001,1])
+                    bestCost = self.tsp.getCost(bestRoute)
+                    if(bestCost < best):
+                        best = bestCost
+                    totalTime = time.time()-startTime
+                    outWriter.writerow([f,str(i),str(best),str(totalTime)])
+            outFile.close()
+
+    def runTestsOR(self):
+        files = ['oliver30.tsp','dj38.tsp','att48.tsp','berlin52.tsp','pr76.tsp','kroB100.tsp']
+        for f in files:
+            file = self.loader.loadFile(filepath=f,fileInfo=self.fileInfo)
+            self.coords = file[0]
+            outFile = open('testsOR.csv', 'a', newline='')
+            outWriter = csv.writer(outFile)
+            tests = 5
+            for t in range(tests):
+                startTime = time.time()
+                self.tsp = TSP(coords=self.coords)
+                bestRoute,bestCost = self.tsp.useSolver()
+                bestCost = self.tsp.getCost(bestRoute)
+                totalTime = time.time()-startTime
+                outWriter.writerow([f,str(bestCost),str(totalTime)])
+            outFile.close()
 
     def runTSP(self,α,β,evaporationCoeff,q,antCount,iterations,pRange) -> None:
         self.stopButton.pack()
